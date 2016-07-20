@@ -47,7 +47,7 @@
 
 # dumbnotes-specific rofi settings
 _rofi () {
-   rofi "$@"
+   rofi -dmenu -p "(qnr): " -i "$@"
 }
 
 # if rifle is install, use it. Otherwise fallback to xdg-open
@@ -131,7 +131,7 @@ while getopts ":hurcw" opt; do
          ;;
 
       r)
-         SEL=$(qn_printDB | rofi -dmenu -i)
+         SEL=$(qn_printDB | _rofi )
          if [ ! -z "$SEL" ]; then
             if [ ! -f $QNDIR"/"$SEL ]; then
                qn_newNote $SEL
