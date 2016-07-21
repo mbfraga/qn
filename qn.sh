@@ -9,7 +9,7 @@
 # functionalities here, it is not meant to replace orgnotes or tomboy.
 
 # The general behavior of this script is as follows:
-#   dnm [-options ...]
+#   qn [-options ...]
 #   -h   prints help text
 #   -r   lists all notes using rofi and opens the selected note
 #   -w   Creates a new note (using vim)
