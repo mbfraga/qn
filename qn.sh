@@ -215,14 +215,16 @@ _show_trash_menu () {
 }
 
 _show_qn_menu () {
-   HELP="\"$delete\" to delete, \"$see_trash\" to show deleted files, \"$rename\" to rename a file"
+   HELP="\"Enter\" to edit selection or create new Note, \"$delete\" to "
+   HELP+=" delete selected file, \"$see_trash\" to show deleted files, "
+   HELP+=" \"$rename\" to rename a file "
 
    SELFS=$(qn_printDB | _rofi -p "(qn): " -format "f;s" \
                   -kb-custom-9 "$delete" \
                   -kb-custom-8 "$see_trash"  \
                   -kb-custom-7 "$rename" \
                   -kb-custom-6 "$open_dir" \
-                  -mesg "$HELP" -filter $@)
+                  -mesg "${HELP}" -filter $@)
    val=$?
 
    FILTER=$(echo $SELFS | cut -d ';' -f 1)
