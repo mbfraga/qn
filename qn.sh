@@ -59,17 +59,16 @@ see_trash="Alt+t"
 rename="Alt+Space" #not yet implemented
 open_dir="Alt+d"
 
-# user-editable globals
-   # Pleaase define this directory. That is the only directory that should be
-   # touched by this script. Anything else that may be created is a bug
-   # This directory will not be created...please create it before using it
-   QNDIR="$HOME/syncthing/smalldocs/quicknotes"
-   QNTRASH="$QNDIR/trash"
-   PERSISTENT=true
+# user-editable globals Pleaase define this directory. That is the only
+# directory that should be touched by this script. Anything else that may be
+# created is a bug This directory will not be created by this script...please
+# create it before using it
+QNDIR="$HOME/syncthing/smalldocs/quicknotes" QNTRASH="$QNDIR/trash"
+PERSISTENT=true
 
 # globals
-   COLOR_URGENT=$(echo $(rofi -dump-xresources | grep "rofi.color-urgent" | \
-      cut -d ',' -f2))
+COLOR_URGENT=$(echo $(rofi -dump-xresources | grep "rofi.color-urgent" | \
+   cut -d ',' -f2))
 
 # If the quicknote directory does not exist...exit gracefully
 if [[ ! -d $QNDIR ]]; then
