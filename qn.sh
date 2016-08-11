@@ -63,7 +63,7 @@ open_dir="Alt+d"
 # directory that should be touched by this script. Anything else that may be
 # created is a bug This directory will not be created by this script...please
 # create it before using it
-QNDIR="$HOME/syncthing/smalldocs/quicknotes" 
+QNDIR="$HOME/syncthing/smalldocs/quicknotes"
 QNTRASH="$QNDIR/trash"
 PERSISTENT=true
 
