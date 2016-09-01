@@ -58,7 +58,10 @@ delete="Alt+Backspace"
 see_trash="Alt+t"
 rename="Alt+Space" #not yet implemented
 open_dir="Alt+d"
+<<<<<<< HEAD
 sortby_content="Alt+s"
+=======
+>>>>>>> 25520a2a523f981f677c5917abea6182a9681966
 
 # user-editable globals Pleaase define this directory. That is the only
 # directory that should be touched by this script. Anything else that may be
@@ -66,11 +69,15 @@ sortby_content="Alt+s"
 # create it before using it
 QNDIR="$HOME/syncthing/smalldocs/quicknotes"
 QNTRASH="$QNDIR/trash"
+<<<<<<< HEAD
 PERSISTENT=false
 COLUMNS=3
 QNTERMINAL=i3-sensible-terminal
 QNBROWSER=chromium
 QNEDITOR=nvim
+=======
+PERSISTENT=true
+>>>>>>> 25520a2a523f981f677c5917abea6182a9681966
 
 # globals
 COLOR_URGENT=$(echo $(rofi -dump-xresources | grep "rofi.color-urgent" | \
@@ -89,6 +96,7 @@ if [[ ! -d $QNTRASH ]]; then
    mkdir $QNTRASH
 fi
 
+<<<<<<< HEAD
 # quicknotes-specific rofi settings
 _rofi () {
    rofi -dmenu  -i -columns $COLUMNS "$@"
@@ -99,13 +107,41 @@ command -v rifle > /dev/null
 if [[ $? -eq 0 ]]; 
    then _file_launcher () { rifle "$@"; }
    else _file_launcher () { xdg-open "$@"; }
+=======
+
+# quicknotes-specific rofi settings
+_rofi () {
+   rofi -dmenu  -i "$@"
+}
+
+_qnterm () {
+   i3-sensible-terminal $@
+}
+# if rifle is installed, use it. Otherwise fallback to xdg-open.
+command -v rifle > /dev/null
+if [[ $? -eq 0 ]]; then
+   _file_launcher () {
+      rifle "$@"
+   }
+else
+   _file_launcher () {
+      xdg-open "$@"
+   }
+>>>>>>> 25520a2a523f981f677c5917abea6182a9681966
 fi
 
 # check if running in interactive terminal or not
 tty -s
 if [[ "0" == "$?" ]]; then
+<<<<<<< HEAD
    TERM_INTER=true;
    _qn_editor () { $QNEDITOR $@; }
+=======
+   TERM_INTER=true
+   _qn_editor () {
+      vim $@
+   }
+>>>>>>> 25520a2a523f981f677c5917abea6182a9681966
 else
    TERM_INTER=false;
    _qn_editor () { notify-send -t 1 $@; $TERMINAL -e "$QNEDITOR $@"; }
@@ -156,6 +192,7 @@ tokenize () {
    done
 }
 
+<<<<<<< HEAD
 _show_sortby_content_menu () {
 
    
@@ -180,6 +217,8 @@ _show_sortby_content_menu () {
 
 }
 
+=======
+>>>>>>> 25520a2a523f981f677c5917abea6182a9681966
 _show_rename_menu () {
 
    NEWNAME=$(echo "" | _rofi -p "(qn rename):" -filter "$@")
@@ -221,6 +260,11 @@ _show_rename_menu () {
 
 }
 
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> 25520a2a523f981f677c5917abea6182a9681966
 _show_trash_menu () {
    SEL=$(qn_printTRASH | _rofi -p "(qn trash):")
    if [[ -z $SEL ]]; then
@@ -238,7 +282,10 @@ _show_qn_menu () {
                   -kb-custom-8 "$see_trash"  \
                   -kb-custom-7 "$rename" \
                   -kb-custom-6 "$open_dir" \
+<<<<<<< HEAD
                   -kb-custom-5 "$sortby_content" \
+=======
+>>>>>>> 25520a2a523f981f677c5917abea6182a9681966
                   -mesg "${HELP}" -filter $@)
    val=$?
 
@@ -262,10 +309,13 @@ _show_qn_menu () {
          _open_dir $SEL
          exit
          ;;
+<<<<<<< HEAD
       14)
          _show_sortby_content_menu $FILTER
          exit
          ;;
+=======
+>>>>>>> 25520a2a523f981f677c5917abea6182a9681966
       *)
          if [[ ! -z "$SEL" ]]; then
             if [[ ! -f $QNDIR"/"$SEL ]]; then
@@ -287,6 +337,7 @@ _show_qn_menu () {
 _open_dir () {
    if [[ $@ == *\/* ]]; then
       DIR=${@%/*}
+<<<<<<< HEAD
       if $TERM_INTER; then
          ranger $QNDIR/$DIR
       else
@@ -300,6 +351,15 @@ _open_dir () {
       fi
    fi
    exit
+=======
+      echo "Moving to $QNDIR/$DIR"
+      i3-sensible-terminal -e "ranger $QNDIR/$DIR"
+   else
+      echo "Moving to $QNDIR"
+      i3-sensible-terminal -e "ranger $QNDIR"
+   fi
+   _show_qn_menu $FILTER
+>>>>>>> 25520a2a523f981f677c5917abea6182a9681966
 }
 
 _delete_menu () {
