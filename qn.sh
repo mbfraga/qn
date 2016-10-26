@@ -13,6 +13,7 @@
 #   -h   prints help text
 #   -r   lists all notes using rofi and opens the selected note
 #   -w   Creates a new note (using vim)
+#   -t   Show trashed notes
 #   
 #   If no argument is provided, this script lists all notes
 #   If a single argument is provided, there are two possible outcomes
@@ -40,6 +41,7 @@
 #  * This script is hardcoded to vim
 #  * Make opening the directory a bit more robust
 #  * Add a way of duplicating a note (may be useful for templates)
+#  * Make it possible to undelete items
 
 
 # DONE
@@ -67,8 +69,8 @@ sortby_content="Alt+s"
 QNDIR="$HOME/syncthing/smalldocs/quicknotes"
 QNTRASH="$QNDIR/trash"
 PERSISTENT=false
-COLUMNS=3
-QNTERMINAL=i3-sensible-terminal
+COLS=3
+QNTERMINAL=urxvt
 QNBROWSER=chromium
 QNEDITOR=nvim
 
@@ -91,7 +93,7 @@ fi
 
 # quicknotes-specific rofi settings
 _rofi () {
-   rofi -dmenu  -i -columns $COLUMNS "$@"
+   rofi -dmenu  -i -columns $COLS "$@"
 }
 
 # if rifle is installed, use it. Otherwise fallback to xdg-open.
@@ -108,7 +110,7 @@ if [[ "0" == "$?" ]]; then
    _qn_editor () { $QNEDITOR $@; }
 else
    TERM_INTER=false;
-   _qn_editor () { notify-send -t 1 $@; $TERMINAL -e "$QNEDITOR $@"; }
+   _qn_editor () { notify-send -t 9 $@; $QNTERMINAL -e $QNEDITOR $@; }
 fi
 
 
@@ -157,7 +159,7 @@ tokenize () {
 }
 
 _show_sortby_content_menu () {
-
+   HELP="search string: $@"
    
    n=0
    for var in "$@"; do
@@ -171,11 +173,13 @@ _show_sortby_content_menu () {
    done
 
    TSEL=$(echo "$results" | tr ";" "\n" | sed '$d' | \
-          rofi -dmenu -i -p "(qn grep)" -columns 1)
+          COLS=1 _rofi -p "(qn grep)" -mesg "$HELP")
 
    TSEL=$(echo "$TSEL" | cut -d ':' -f1 | sed "s@$QNDIR/@@" )
 
-   qn_openNote "$TSEL"
+   if [[ ! -z "$TSEL" ]]; then
+      qn_openNote "$TSEL"
+   fi
 
 
 }
@@ -194,7 +198,7 @@ _show_rename_menu () {
    fi
  
    help_text="<span color=\"${COLOR_URGENT}\">Are you sure you want to rename $SEL to $NEWNAME ?</span>"
-   dodelete=$(echo -e "no\nyes" | _rofi -p "(qn rename):" -mesg "${help_text}")
+   dodelete=$(echo -e "no\nyes" |COLS=1 _rofi -p "(qn rename):" -mesg "${help_text}")
 
    if [[ -z $dodelete ]]; then _show_qn_menu $FILTER; exit; fi
 
@@ -222,10 +226,18 @@ _show_rename_menu () {
 }
 
 _show_trash_menu () {
-   SEL=$(qn_printTRASH | _rofi -p "(qn trash):")
+   HELP="Press enter to restore file"
+   SEL=$(qn_printTRASH | _rofi -p "(qn trash):" -mesg "$HELP")
+
+   # I don't know if I should have this.
    if [[ -z $SEL ]]; then
       _show_qn_menu $FILTER
+      exit
    fi
+
+   _undelete_menu $SEL
+   exit
+   #echo "$QNTRASH/$SEL"
 }
 
 _show_qn_menu () {
@@ -290,13 +302,13 @@ _open_dir () {
       if $TERM_INTER; then
          ranger $QNDIR/$DIR
       else
-         $QNTERMINAL -e "ranger $QNDIR/$DIR"
+         $QNTERMINAL -e ranger $QNDIR/$DIR
       fi
    else
       if $TERM_INTER; then
          ranger $QNDIR
       else
-      $QNTERMINAL -e "ranger $QNDIR"
+      $QNTERMINAL -e ranger $QNDIR
       fi
    fi
    exit
@@ -304,7 +316,7 @@ _open_dir () {
 
 _delete_menu () {
    help_text="<span color=\"${COLOR_URGENT}\">Are you sure you want to delete $SEL ?</span>"
-   dodelete=$(echo -e "no\nyes" | _rofi -p "(qn delete):" -mesg "${help_text}")
+   dodelete=$(echo -e "no\nyes" |COLS=1 _rofi  -p  "(qn delete):" -mesg "${help_text}")
 
    if [[ -z $dodelete ]]; then _show_qn_menu $FILTER; exit; fi
 
@@ -338,8 +350,45 @@ _delete () {
    mv $QNDIR/$SEL $QNTRASH/$SEL 
 }
 
+_undelete_menu () {
+   help_text="<span color=\"${COLOR_URGENT}\">Are you sure you want to restore $SEL ?</span>"
+   dodelete=$(echo -e "no\nyes" |COLS=1 _rofi  -p  "(qn delete):" -mesg "${help_text}")
+
+   if [[ -z $dodelete ]]; then _show_qn_menu $FILTER; exit; fi
+
+   if [[ $dodelete == "yes" ]]; then
+      _undelete $SEL
+      exit
+   else
+      _show_qn_menu $FILTER
+      exit
+   fi
+}
+
+_undelete () {
+   notify-send "restoring $SEL"
+   if [[ $SEL == *\/* ]]; then
+      DIR=${SEL%/*}
+      if [ ! -d "$QNDIR/$DIR" ]; then
+         mkdir -p $QNDIR/$DIR
+      else
+         if [ -e "$QNDIR/$SEL" ]; then
+            now=$(date +"%m%d%Y-%H%M%S")
+            mv $QNTRASH/$SEL $QNDIR/$SEL-conflict_$now
+            exit
+         fi
+         mv $QNTRASH/$SEL $QNDIR/$SEL
+         #once a file is removed, delete it's directory if empty
+         find $QNTRASH -type d -empty -delete
+         exit
+      fi
+   fi
+   mv $QNTRASH/$SEL $QNDIR/$SEL 
+
+}
+
 quicknotesr () {
-while getopts ":hurcw" opt; do
+while getopts ":hurcwt" opt; do
    case $opt in
       h)
          echo "quicknotesr usage:" >&2
@@ -350,6 +399,7 @@ while getopts ":hurcw" opt; do
 #         echo "      -u       Update database" >&2
          echo "      -r       List notes with rofi and open selected note" >&2
          echo "      -w       Create new note (with vim)" >&2
+         echo "      -t       Show contents of Trash" >&2
          echo "" >&2
 
          exit
@@ -372,6 +422,10 @@ while getopts ":hurcw" opt; do
          else
             qn_newNote $2
          fi
+         exit
+         ;;
+      t)
+         qn_printTRASH
          exit
          ;;
 
