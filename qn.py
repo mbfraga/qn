@@ -3,7 +3,7 @@ import sys
 import subprocess
 from subprocess import Popen,PIPE
 import struct
-import magic
+import magic # to detect mimetypes
 
 #import notify2
 
@@ -12,20 +12,29 @@ import magic
 # * Rename note
 # * open note's directory in ranger
 
+# User-defined Globals
 
-QNDIR = os.path.expanduser("~") + "/syncthing/smalldocs/quicknotes"
-QNDIR = os.path.expanduser("~") + "/qn_test"
-#PERSISTENT = False
+#QNDIR = os.path.join(os.path.expanduser("~"), "/syncthing/smalldocs/quicknotes")
+QNDIR = os.path.join(os.path.expanduser("~"), "/qn_test")
 COLS=3
 QNTERMINAL='urxvt'
-#QNBROWSER=chromium
+#QNBROWSER=chromium # not used
 QNEDITOR='nvim'
 
+
+# Globals
+
+# delete note
 opt_delete = 'Alt+Backspace'
+# see trashed notes with the ability to restore them
 opt_seetrash = 'Alt+t'
+# rename note
 opt_rename = 'Alt+Space'
+# Open selected note's directory (not yet implemented)
 opt_open_dir = 'Alt+d'
+# Grep notes (not yet implemented)
 opt_filter_content = 'Alt+s'
+# Force create a note
 opt_force_new = 'Alt+Return'
 
 QNDATA = os.path.join(QNDIR, '.qn')
@@ -60,55 +69,53 @@ def call_rofi(rofi_command, entries, additional_args=[]):
     proc.stdin.close()
     answer = proc.stdout.read().decode("utf-8")
     exit_code = proc.wait()
-    #trim whitespace
+    # trim whitespace
     if answer == '':
         return(None, exit_code)
     else:
         return(answer.strip('\n'), exit_code)
 
-# linux only
+# Check if program exists - linux only
 def cmd_exists(cmd):
     return subprocess.call("type " + cmd, shell=True, 
         stdout=subprocess.PIPE, stderr=subprocess.PIPE) == 0
 
 
 
-# Preprocess stuff
+# Make sure everything is ready for qn
+
 if not os.path.isdir(QNDIR):
     print( "Please create your directory as defined by QNDIR!")
     print( "As of now, you set QNDIR to be '$QNDIR'")
     print( "This directory was not found! Exiting...")
     sys.exit(1)
-
 if not os.path.exists(QNDATA):
     os.makedirs(QNDATA, exist_ok=True)
-
 if not os.path.exists(QNTRASH):
     os.makedirs(QNTRASH, exist_ok=True)
 
+# Define application launcher
 if cmd_exists('rifle'):
     file_launcher = 'rifle'
 else:
     file_launcher = 'xdg-open'
 
+# Check if interactive terminal or not
 if sys.stdin.isatty():
     TERM_INTER=True
-    #text_editor = [QNEDITOR]
     text_editor = QNEDITOR
-    #subprocess.Popen(['notify-send', 'interactive'])
 else:
     TERM_INTER=False
-    #text_editor = [QNTERMINAL, '-e', QNEDITOR]
     text_editor = QNTERMINAL + ' -e ' + QNEDITOR
-    #subprocess.Popen(['notify-send', 'not interactive'])
 
 
-# outdated option? Still best it seems
+# outdated option to detect mimetype? Still best it seems
 def file_mime_type(filename):
     m = magic.open(magic.MAGIC_MIME_TYPE)
     m.load()
     return(m.file(filename))
 
+# Right now it includes hidden files - this needs to be fixed
 def _list_files(path):
     list_files = [] 
     for root, dirs, files in os.walk(path, topdown=True):
@@ -116,60 +123,6 @@ def _list_files(path):
             fp = os.path.join(root, name)
             list_files.append(os.path.relpath(fp, path))
     return(list_files)
-
-# old method
-def _neat_move_file(note, dirs, dirt, newname=None):
-    if ( '/' in note):
-        print(note.rsplit('/'))
-        subpath,notename = note.rsplit('/', 1)
-        
-        full_dirs_sp = os.path.join(dirs, subpath)
-        full_dirt_sp = os.path.join(dirt, subpath)
-        full_dirs_np = os.path.join(full_dirs_sp, notename)
-        if newname:
-            full_dirt_np = os.path.join(full_dirt_sp, newname)
-        else:
-            full_dirt_np = os.path.join(full_dirt_sp, notename)
-
-
-        if ( os.path.isdir(full_dirs_sp) ):
-            if not ( os.path.isdir(full_dirt_sp)):
-                print('creating ' + full_dirt_sp)
-                os.makedirs(full_dirt_sp)
-
-        try:
-            os.rename(full_dirs_np, full_dirt_np)
-            print('Moved ' + full_dirs_np + ' to ' + full_dirt_np)
-        except OSError:
-            sys.exit(1)
-
-        try:
-            os.rmdir(full_dirs_sp)
-        except OSError:
-            sys.exit(1)
-
-        sys.exit(0)
-
-    try:
-        full_dirs_np = os.path.join(dirs, note)
-        if newname:
-            full_dirt_np = os.path.join(dirt, newname)
-        else:
-            full_dirt_np = os.path.join(dirt, notename)
-
-        os.rename(full_dirs_np, full_dirt_np)
-        print('Moved ' + full_dirs_np + ' to ' + full_dirt_np)
-
-        sys.exit(0)
-    except OSError:
-        sys.exit(1)
-
-
-def _delete_note(note):
-    _move_note(note, note, dest1=QNDIR, dest2=QNTRASH)
-
-def _undelete_note(note):
-    _move_note(note, note, dest1=QNTRASH, dest2=QNDIR)
 
 def _move_note(name1, name2, dest1=QNDIR, dest2=QNDIR):
     has_sp1 = False
@@ -226,8 +179,11 @@ def _move_note(name1, name2, dest1=QNDIR, dest2=QNDIR):
     sys.exit(0)
 
 
+def _delete_note(note):
+    _move_note(note, note, dest1=QNDIR, dest2=QNTRASH)
 
-
+def _undelete_note(note):
+    _move_note(note, note, dest1=QNTRASH, dest2=QNDIR)
 
 #def notify_send(noti):
 #    notify2.init('qn')
@@ -253,15 +209,14 @@ def qnOpenNote(note):
 def qnNewNote(note):
     if '/' in note:
         note_dir = note.rsplit('/',1)[0]
-        #print(note_dir)
         if not os.path.isdir(note_dir):
             os.makedirs(os.path.join(QNDIR, note_dir), exist_ok=True)
 
     os.system(text_editor + " " + os.path.join(QNDIR, note))
+    return(0)
 
-    return(1)
 
-
+# In implementation - not yet working
 def qnFindInNotes(strings):
     if (isinstance(strings, basestring)):
         print('Searching in notes for ' + strings)
@@ -275,14 +230,6 @@ def qnFindInNotes(strings):
         answer = proc.stdout.read().decode("utf-8")
         exit_code = proc.wait()
         print(answer)
- 
-
-    #for var in strings:
-
-
-#def qnDelNote(note):
-
-     
 
 
 
@@ -313,19 +260,17 @@ def show_main_rofi(starting_filter=None):
     elif (val == 16):
         show_rename_rofi(SEL)
     elif (val == 15):
-        print('open dir')
+        print('open dir - not yet implemented')
     elif (val == 14):
-        print('find content')
-        qnFindInNotes([FILTER])
+        print('find content - not yet implemented')
+        #qnFindInNotes([FILTER])
     elif (val == 13):
         if SEL.strip():
-            print("creating file " + FILTER + "...")
+            print("creating note " + FILTER + "...")
             qnNewNote(FILTER)
-
     else:
         if SEL.strip():
-            path=QNDIR + "/" + SEL
-            #print(path)
+            path=os.path.join(QNDIR, SEL)
             if os.path.isfile(path):
                 print("file found, edit...")
                 qnOpenNote(SEL)
@@ -336,15 +281,11 @@ def show_main_rofi(starting_filter=None):
 def show_trash_rofi():
     HELP = 'Press enter to restore file'
     trash_files = _list_files(QNTRASH)
-    print(trash_files)
     rofi_command = rofi_base_command + ['-mesg', HELP]
     SEL,val = call_rofi(rofi_command, trash_files)
-
     if (SEL == None):
         sys.exit(1)
-
     if SEL.strip():
-        print(SEL)
         show_undelete_rofi(SEL)
 
 def show_yesno_rofi(HELP_MSG):
