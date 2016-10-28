@@ -14,8 +14,8 @@ import magic # to detect mimetypes
 
 # User-defined Globals
 
-#QNDIR = os.path.join(os.path.expanduser("~"), "/syncthing/smalldocs/quicknotes")
-QNDIR = os.path.join(os.path.expanduser("~"), "/qn_test")
+#QNDIR = os.path.join(os.path.expanduser("~"), "syncthing/smalldocs/quicknotes")
+QNDIR = os.path.join(os.path.expanduser("~"), "qn_test")
 COLS=3
 QNTERMINAL='urxvt'
 #QNBROWSER=chromium # not used
@@ -84,6 +84,7 @@ def cmd_exists(cmd):
 
 # Make sure everything is ready for qn
 
+print("Checking qn directory " + QNDIR + "...")
 if not os.path.isdir(QNDIR):
     print( "Please create your directory as defined by QNDIR!")
     print( "As of now, you set QNDIR to be '$QNDIR'")
