@@ -42,6 +42,8 @@
 #  * Make opening the directory a bit more robust
 #  * Add a way of duplicating a note (may be useful for templates)
 #  * Make it possible to undelete items
+#  * Maybe implement opening two files in vim -d (diff)
+#  * Make code less reliant on rofi
 
 
 # DONE
@@ -58,14 +60,17 @@
 # Custom rofi keybindings (none yet)
 delete="Alt+Backspace"
 see_trash="Alt+t"
-rename="Alt+Space" #not yet implemented
+rename="Alt+Space"
 open_dir="Alt+d"
 sortby_content="Alt+s"
 
-# user-editable globals Pleaase define this directory. That is the only
-# directory that should be touched by this script. Anything else that may be
-# created is a bug This directory will not be created by this script...please
-# create it before using it
+# user-editable globals 
+
+# Pleaase define this directory. That is the only directory that should be
+# touched by this script. Anything else that may be created is a bug. This
+# directory will not be created by this script...please create it before using
+# it
+
 QNDIR="$HOME/syncthing/smalldocs/quicknotes"
 QNTRASH="$QNDIR/trash"
 PERSISTENT=false
@@ -77,6 +82,7 @@ QNEDITOR=nvim
 # globals
 COLOR_URGENT=$(echo $(rofi -dump-xresources | grep "rofi.color-urgent" | \
    cut -d ',' -f2))
+BOOL_ROFI=false
 
 # If the quicknote directory does not exist...exit gracefully
 if [[ ! -d $QNDIR ]]; then
@@ -151,16 +157,7 @@ qn_newNote () {
    echo "Note closed."
 }
 
-tokenize () {
-   filter=($@)
-   for each in "${filter[@]}"; do
-     echo "$each"
-   done
-}
-
-_show_sortby_content_menu () {
-   HELP="search string: $@"
-   
+qn_findInNotes () {
    n=0
    for var in "$@"; do
       n=$((n+1))
@@ -168,10 +165,31 @@ _show_sortby_content_menu () {
          results=$(egrep -s "$var" $QNDIR/* | tr "\n" ";" )
       else
          results=$(echo $results | tr ";" "\n" | egrep -s $var | tr "\n" ";")
-      #   results=$(tokenize $results |grep $var)
       fi
    done
+   echo $results
+}
 
+tokenize () {
+   filter=($@)
+   for each in "${filter[@]}"; do
+     echo "$each"
+   done
+}
+
+_rename_file () {
+   newname=$@
+
+}
+
+
+# rename this function to _show_filter_bc_menu?
+# is this rofi-specific?
+
+_show_sortby_content_menu () {
+   HELP="search string: $@"
+
+   results=$(qn_findInNotes $@)
    TSEL=$(echo "$results" | tr ";" "\n" | sed '$d' | \
           COLS=1 _rofi -p "(qn grep)" -mesg "$HELP")
 
@@ -180,12 +198,10 @@ _show_sortby_content_menu () {
    if [[ ! -z "$TSEL" ]]; then
       qn_openNote "$TSEL"
    fi
-
-
 }
 
-_show_rename_menu () {
 
+_show_rename_menu () {
    NEWNAME=$(echo "" | _rofi -p "(qn rename):" -filter "$@")
 
    if [[ -z $NEWNAME ]];then
@@ -388,7 +404,7 @@ _undelete () {
 }
 
 quicknotesr () {
-while getopts ":hurcwt" opt; do
+while getopts ":hurcwst" opt; do
    case $opt in
       h)
          echo "quicknotesr usage:" >&2
@@ -400,6 +416,7 @@ while getopts ":hurcwt" opt; do
          echo "      -r       List notes with rofi and open selected note" >&2
          echo "      -w       Create new note (with vim)" >&2
          echo "      -t       Show contents of Trash" >&2
+         echo "      -s       Search for words in notes"
          echo "" >&2
 
          exit
@@ -411,6 +428,7 @@ while getopts ":hurcwt" opt; do
          ;;
 
       r)
+         BOOL_ROFI=true
          _show_qn_menu
          exit
          ;;
@@ -428,10 +446,16 @@ while getopts ":hurcwt" opt; do
          qn_printTRASH
          exit
          ;;
+      s)
+         results=$(qn_findInNotes $2)
+         echo "$results" | tr ";" "\n" | sed '$d' | sed "s@$QNDIR/@@"
+         exit
+         ;;
 
       \?)
          echo "Invalid option: -$OPTARG" >&2
          ;;
+
    esac
 done
 
