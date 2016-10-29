@@ -5,6 +5,11 @@ from subprocess import Popen,PIPE
 import struct
 import magic # to detect mimetypes
 
+import mmap
+
+import time
+timea = time.time()
+
 #import notify2
 
 # TO IMPLEMENT
@@ -14,8 +19,8 @@ import magic # to detect mimetypes
 
 # User-defined Globals
 
-#QNDIR = os.path.join(os.path.expanduser("~"), "syncthing/smalldocs/quicknotes")
-QNDIR = os.path.join(os.path.expanduser("~"), "qn_test")
+QNDIR = os.path.join(os.path.expanduser("~"), "syncthing/smalldocs/quicknotes")
+#QNDIR = os.path.join(os.path.expanduser("~"), "qn_test")
 COLS=3
 QNTERMINAL='urxvt'
 #QNBROWSER=chromium # not used
@@ -84,7 +89,7 @@ def cmd_exists(cmd):
 
 # Make sure everything is ready for qn
 
-print("Checking qn directory " + QNDIR + "...")
+#print("Checking qn directory " + QNDIR + "...")
 if not os.path.isdir(QNDIR):
     print( "Please create your directory as defined by QNDIR!")
     print( "As of now, you set QNDIR to be '$QNDIR'")
@@ -118,12 +123,18 @@ def file_mime_type(filename):
 
 # Right now it includes hidden files - this needs to be fixed
 def _list_files(path):
-    list_files = [] 
+    file_l = [] 
+    file_full_l = []
+
     for root, dirs, files in os.walk(path, topdown=True):
         for name in files:
             fp = os.path.join(root, name)
-            list_files.append(os.path.relpath(fp, path))
-    return(list_files)
+            fp_rel = os.path.relpath(fp, path)
+            if (fp_rel[0] == '.'):
+                continue
+            file_l.append(fp_rel)
+            file_full_l.append(fp)
+    return(file_l, file_full_l)
 
 def _move_note(name1, name2, dest1=QNDIR, dest2=QNDIR):
     has_sp1 = False
@@ -218,19 +229,38 @@ def qnNewNote(note):
 
 
 # In implementation - not yet working
-def qnFindInNotes(strings):
-    if (isinstance(strings, basestring)):
-        print('Searching in notes for ' + strings)
-
-        proc = Popen(rofi_command + additional_args, stdin=PIPE, stdout=PIPE)
-
-        proc.stdin.write((strings).encode('utf-8'))
-        proc.stdin.write(struct.pack('B', 0))
-
-        proc.stdin.close()
-        answer = proc.stdout.read().decode("utf-8")
+def qnFindInNotes(file_list, f_string):
+    grep_path = os.path.join(QNDIR, '*')
+    filt = f_string.strip().split(" ") 
+    filtered_list = file_list
+    for f in filt:
+        keyword =  f 
+        proc = subprocess.Popen(['grep', '-i', '-I',  keyword] + filtered_list, stdout=PIPE)
+        answer = proc.stdout.read().decode('utf-8')
         exit_code = proc.wait()
-        print(answer)
+        # trim whitespace
+        if answer == '':
+            return(None, exit_code)
+
+        filtered_list = []
+        filtered_content = []
+        raw_lines = []
+        
+        for ans in answer.split('\n'):
+            if ans.strip() == '':
+                continue
+    #        print(ans)
+            raw_lines.append(ans)
+            note_name, note_content = ans.split(':', 1)
+            if note_name in filtered_list:
+                continue
+            else:
+                filtered_list.append(note_name)
+                filtered_content.append(note_content)
+
+    return(raw_lines, filtered_list, filtered_content)
+
+    
 
 
 
@@ -239,7 +269,7 @@ def show_main_rofi(starting_filter=None):
     HELP += opt_seetrash + "\" to show trash, "
     HELP += " \"" + opt_rename + "\" to rename"
 
-    main_files = _list_files(QNDIR)
+    main_files,main_files_full = _list_files(QNDIR)
     rofi_command = rofi_base_command + ['-mesg', HELP, '-format', 'f;s']
     if starting_filter:
         rofi_command += ['-filter', starting_filter]
@@ -264,7 +294,10 @@ def show_main_rofi(starting_filter=None):
         print('open dir - not yet implemented')
     elif (val == 14):
         print('find content - not yet implemented')
-        #qnFindInNotes([FILTER])
+        RESULT = show_filtered_rofi(main_files_full, FILTER)
+        print("Opening " + RESULT + "...")
+        qnOpenNote(RESULT)
+
     elif (val == 13):
         if SEL.strip():
             print("creating note " + FILTER + "...")
@@ -279,9 +312,37 @@ def show_main_rofi(starting_filter=None):
                 print("file not found, create...")
                 qnNewNote(SEL)
 
+def show_filtered_rofi(mff, FILTER):
+    HELP = "List of notes filtered for '" + FILTER + "'."
+    raw, fnotes, fcont = qnFindInNotes(mff, FILTER.strip())
+    rofi_command = rofi_base_command + ['-p', 'qn search', '-mesg', HELP, 
+            '-columns', '1', '-format', 'i']
+
+    if FILTER == '':
+        show_main_rofi()
+
+    final_list = []
+    n = 0
+    for fn in fnotes:
+        fn_rel = os.path.relpath(fn, QNDIR)
+        if len(fn_rel) > 21:
+            fn_rel = fn_rel[0:10] + '…' + fn_rel[-11:len(fn_rel)]
+
+        fn_rel += "  :  " + fcont[n]
+        final_list.append(fn_rel)
+        n += 1
+
+    SEL,val = call_rofi(rofi_command, final_list)
+    if SEL == None:
+        sys.exit(0)
+    
+    return(fnotes[int(SEL)])
+
+
+
 def show_trash_rofi():
     HELP = 'Press enter to restore file'
-    trash_files = _list_files(QNTRASH)
+    trash_files, trash_files_full = _list_files(QNTRASH)
     rofi_command = rofi_base_command + ['-mesg', HELP]
     SEL,val = call_rofi(rofi_command, trash_files)
     if (SEL == None):
@@ -337,6 +398,8 @@ def start_qn ():
     show_main_rofi()
 
 start_qn()
+timeb = time.time()
+print('delta t: ' + str(timeb-timea))
 #print(_delete_note('del/file1'))
 #print(_undelete_note('del/file1'))
 #print(show_yesno_rofi('are you sure you want to delete this?'))
