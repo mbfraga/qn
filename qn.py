@@ -18,8 +18,8 @@ import magic # to detect mimetypes
 
 # User-defined Globals
 
-#QNDIR = os.path.join(os.path.expanduser("~"), "syncthing/smalldocs/quicknotes")
-QNDIR = os.path.join(os.path.expanduser("~"), "qn_test2")
+QNDIR = os.path.join(os.path.expanduser("~"), "syncthing/smalldocs/quicknotes")
+#QNDIR = os.path.join(os.path.expanduser("~"), "qn_test2")
 QNTERMINAL='urxvt'
 #QNBROWSER=chromium # not used
 QNEDITOR='nvim'
@@ -202,7 +202,9 @@ def check_environment(in_rofi=False):
     if not os.path.isdir(QNDIR):
         HELP_MSG = " Do you want to create the qn directory: " + QNDIR + "?"
         if in_rofi:
+            from qnr import show_yesno_rofi # this doesn't seem like the right approach...but for now it works(tm)
             if show_yesno_rofi(HELP_MSG):
+
                 print("Creating directory: " + QNDIR + "...")
                 os.makedirs(QNDIR)
             else:
