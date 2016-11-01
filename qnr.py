@@ -18,6 +18,12 @@ opt_open_dir = 'Alt+d'
 opt_filter_content = 'Alt+s'
 # Force create a note
 opt_force_new = 'Alt+Return'
+# Enter tag menu (not yet implemented)
+opt_seetagm = 'Alt+u'
+# Browse tags (not yet implemented)
+opt_seetagb = 'Alt+i'
+# Create New Tag
+opt_newtag = 'Alt+n'
 
 
 rofi_base_command = ['rofi', '-dmenu', '-p', 'qn:']
@@ -25,12 +31,15 @@ rofi_base_command = ['rofi', '-dmenu', '-p', 'qn:']
 # code borrowed from
 # https://github.com/DaveDavenport/Rofication/blob/master/rofication-gui.py
 def call_rofi(rofi_command, entries, additional_args=[]):
-    additional_args.extend([ '-kb-custom-9', opt_delete,
-                             '-kb-custom-8', opt_seetrash,
-                             '-kb-custom-7', opt_rename,
-                             '-kb-custom-6', opt_open_dir,
-                             '-kb-custom-5', opt_filter_content,
-                             '-kb-custom-4', opt_force_new,
+    additional_args.extend([ '-kb-custom-19', opt_delete,
+                             '-kb-custom-18', opt_seetrash,
+                             '-kb-custom-17', opt_rename,
+                             '-kb-custom-16', opt_open_dir,
+                             '-kb-custom-15', opt_filter_content,
+                             '-kb-custom-14', opt_force_new,
+                             '-kb-custom-13', opt_seetagm,
+                             '-kb-custom-12', opt_seetagb,
+                             '-kb-custom-11', opt_newtag,
                              '-markup-rows',
                              '-sep', '\\0',
 #                             '-format', 'i',
@@ -78,25 +87,34 @@ def show_main_rofi(starting_filter=None):
     #print('sel:' + SEL)
     #print('val:' + str(val))
 
-    if (val == 18):
+    if (val == 28):
         show_delete_rofi(SEL)
         sys.exit(0)
-    elif (val == 17):
+    elif (val == 27):
         show_trash_rofi()
-    elif (val == 16):
+    elif (val == 26):
         show_rename_rofi(SEL)
-    elif (val == 15):
+    elif (val == 25):
         print('open dir - not yet implemented')
-    elif (val == 14):
+        sys.exit(1)
+    elif (val == 24):
         print('find content - not yet implemented')
         RESULT = show_filtered_rofi(main_files_full, FILTER)
         print("Opening " + RESULT + "...")
         qn.qn_open_note(RESULT)
-
-    elif (val == 13):
+    elif (val == 23):
         if SEL.strip():
             print("creating note " + FILTER + "...")
             qn.qn_new_note(FILTER)
+    elif (val == 22):
+        print("show tagmenu - not yet implemented")
+        show_tagmenu_rofi(SEL)
+    elif (val == 21):
+        print("show tagbrowse - not yet implemented")
+        sys.exit(0)
+    elif (val == 20):
+        print("add new tag - not yet implemented")
+        sys.exit(0)
     else:
         if SEL.strip():
             path=os.path.join(qn.QNDIR, SEL)
@@ -142,6 +160,37 @@ def show_trash_rofi():
         sys.exit(1)
     if SEL.strip():
         show_undelete_rofi(SEL)
+
+def show_tagmenu_rofi(notename):
+    HELP = 'Tag menu for "' + notename + '"\n'
+    HELP += "'Enter' to edit tag, '" + opt_delete + "' to delete tag"
+    TITLE = 'qn tag menu:'
+
+    rofi_command = rofi_base_command[0:2] + ['-mesg', HELP, '-p', TITLE
+                    , '-columns', '1', '-format', 'i;s']
+
+    #here will be the options to edit/delete existing tags
+    OPTIONS = []
+    #noftags = 0
+    #for tag in existing_tags:
+        #OPTIONS += [str(noftags+2)  + '. Tag: ' +  tag]
+    #    noftags += 1
+
+    existing_tags = ['japan', 'travel']
+    OPTIONS += existing_tags # for now, I'm just showing tags
+
+    IS,val = call_rofi(rofi_command, OPTIONS)
+    if not IS:
+        sys.exit(0)
+
+    INDEX,SEL = IS.split(';')
+    print('ind:' + INDEX)
+    print('sel:' + SEL)
+    print('val:' + str(val))
+    sys.exit(0)
+
+
+
 
 def show_yesno_rofi(HELP_MSG):
     HELP="<span color=\"red\">"
