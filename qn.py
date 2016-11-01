@@ -1,8 +1,12 @@
 import os
 import sys
-import subprocess
-from subprocess import Popen,PIPE
-import magic # to detect mimetypes
+from subprocess import Popen,PIPE, call
+
+try:
+    import magic # to detect mimetypes
+except OSError:
+    print("Please install python-magic. Exiting..."
+    sys.exit(1)
 
 #import mmap
 
@@ -18,8 +22,8 @@ import magic # to detect mimetypes
 
 # User-defined Globals
 
-#QNDIR = os.path.join(os.path.expanduser("~"), "syncthing/smalldocs/quicknotes")
-QNDIR = os.path.join(os.path.expanduser("~"), "qn_test2")
+QNDIR = os.path.join(os.path.expanduser("~"), "syncthing/smalldocs/quicknotes")
+#QNDIR = os.path.join(os.path.expanduser("~"), "qn_test2")
 QNTERMINAL='urxvt'
 #QNBROWSER=chromium # not used
 QNEDITOR='nvim'
@@ -33,8 +37,8 @@ TERM_INTER = False
 
 # Check if program exists - linux only
 def cmd_exists(cmd):
-    return subprocess.call("type " + cmd, shell=True, 
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE) == 0
+    return call("type " + cmd, shell=True, 
+        stdout=PIPE, stderr=PIPE) == 0
 
 # Define application launcher
 if cmd_exists('rifle'):
@@ -170,7 +174,7 @@ def qn_find_in_notes(file_list, f_string):
     filtered_list = file_list
     for f in filt:
         keyword =  f 
-        proc = subprocess.Popen(['grep', '-i', '-I',  keyword] + filtered_list, stdout=PIPE)
+        proc = Popen(['grep', '-i', '-I',  keyword] + filtered_list, stdout=PIPE)
         answer = proc.stdout.read().decode('utf-8')
         exit_code = proc.wait()
         # trim whitespace

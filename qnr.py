@@ -57,9 +57,12 @@ def call_rofi(rofi_command, entries, additional_args=[]):
 
 
 def show_main_rofi(starting_filter=None):
-    HELP  = "\"Enter\" to edit/create, \"" + opt_delete + "\" to delete, "
-    HELP += opt_seetrash + "\" to show trash, "
-    HELP += " \"" + opt_rename + "\" to rename"
+    HELP  = "\"Enter\" to edit/create, \"" 
+    HELP += opt_force_new + "\" to force create, \""
+    HELP += opt_delete + "\" to delete, \""
+    HELP += opt_seetrash + "\" to show trash, \""
+    HELP += opt_rename + "\" to rename, \""
+    HELP += opt_filter_content + "\" to search"
 
     main_files,main_files_full = qn._list_files(qn.QNDIR)
     rofi_command = rofi_base_command + ['-mesg', HELP, '-format', 'f;s']
@@ -88,7 +91,7 @@ def show_main_rofi(starting_filter=None):
         print('find content - not yet implemented')
         RESULT = show_filtered_rofi(main_files_full, FILTER)
         print("Opening " + RESULT + "...")
-        qn_open_note(RESULT)
+        qn.qn_open_note(RESULT)
 
     elif (val == 13):
         if SEL.strip():
@@ -99,7 +102,7 @@ def show_main_rofi(starting_filter=None):
             path=os.path.join(qn.QNDIR, SEL)
             if os.path.isfile(path):
                 print("file found, edit...")
-                qn_open_note(SEL)
+                qn.qn_open_note(SEL)
             else:
                 print("file not found, create...")
                 qn.qn_new_note(SEL)
