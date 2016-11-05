@@ -1,36 +1,39 @@
-from subprocess import Popen,PIPE,call
-import qn
 import os
 import sys
+from subprocess import Popen,PIPE,call
 import struct
 
+import qn
+
+# User Settings
 COLS=3
-
-# delete note
+# Delete note.
 opt_delete = 'Alt+Backspace'
-# see trashed notes with the ability to restore them
+# See trashed notes with the ability to restore them.
 opt_seetrash = 'Alt+t'
-# rename note
+# Rename note.
 opt_rename = 'Alt+Space'
-# Open selected note's directory (not yet implemented)
+# Open selected note's directory (not yet implemented).
 opt_open_dir = 'Alt+d'
-# Grep notes (not yet implemented)
+# Grep notes (not yet implemented).
 opt_filter_content = 'Alt+s'
-# Force create a note
+# Force create a note.
 opt_force_new = 'Alt+Return'
-# Enter tag menu (not yet implemented)
+# Enter tag menu.
 opt_seetagm = 'Alt+u'
-# Browse tags (not yet implemented)
+# Browse tags.
 opt_seetagb = 'Alt+i'
-# Create New Tag
-opt_newtag = 'Alt+n'
+# Add Tag to note.
+opt_addtag = 'Alt+n'
 
 
-rofi_base_command = ['rofi', '-dmenu', '-p', 'qn:']
+rofi_base_command = ['rofi', '-dmenu', '-i']#, '-p', 'qn:']
 
-# code borrowed from
-# https://github.com/DaveDavenport/Rofication/blob/master/rofication-gui.py
+
+# call_rofi code borrowed from
 def call_rofi(rofi_command, entries, additional_args=[]):
+
+
     additional_args.extend([ '-kb-custom-19', opt_delete,
                              '-kb-custom-18', opt_seetrash,
                              '-kb-custom-17', opt_rename,
@@ -39,25 +42,24 @@ def call_rofi(rofi_command, entries, additional_args=[]):
                              '-kb-custom-14', opt_force_new,
                              '-kb-custom-13', opt_seetagm,
                              '-kb-custom-12', opt_seetagb,
-                             '-kb-custom-11', opt_newtag,
-                             '-markup-rows',
+                             '-kb-custom-11', opt_addtag,
                              '-sep', '\\0',
-#                             '-format', 'i',
                              '-columns', str(COLS),
+#                             '-markup-rows',
+#                             '-format', 'i',
 #                             '-lines', '4',
 #                             '-eh', '2',
 #                             '-location', '2', '-width', '100' ])
-                            ])
+                             ])
 
     proc = Popen(rofi_command + additional_args, stdin=PIPE, stdout=PIPE)
-
     for e in entries:
         proc.stdin.write((e).encode('utf-8'))
         proc.stdin.write(struct.pack('B', 0))
-
     proc.stdin.close()
     answer = proc.stdout.read().decode("utf-8")
     exit_code = proc.wait()
+
     # trim whitespace
     if answer == '':
         return(None, exit_code)
@@ -65,24 +67,35 @@ def call_rofi(rofi_command, entries, additional_args=[]):
         return(answer.strip('\n'), exit_code)
 
 
-def show_main_rofi(starting_filter=None):
-    HELP  = "\"Enter\" to edit/create, \"" 
-    HELP += opt_force_new + "\" to force create, \""
-    HELP += opt_delete + "\" to delete, \""
-    HELP += opt_seetrash + "\" to show trash, \""
-    HELP += opt_rename + "\" to rename, \""
-    HELP += opt_filter_content + "\" to search"
+def show_main_rofi(prev_filter=None, alt_files=None, alt_title=None):
 
-    main_files,main_files_full = qn._list_files(qn.QNDIR)
-    rofi_command = rofi_base_command + ['-mesg', HELP, '-format', 'f;s']
-    if starting_filter:
-        rofi_command += ['-filter', starting_filter]
 
-    SELFS,val = call_rofi(rofi_command,main_files)
+    HELP  = ('"Enter" to edit/create, ' 
+             + '"' + opt_force_new + '" to force create, "'
+             + '"' + opt_delete    + '" to delete, "'
+             + '"' + opt_seetrash  + '" to show trash, "'
+             + '"' + opt_rename    + '" to rename')
+    # for now, custom lists can't be filtered.
+    if alt_files:
+        HELP += '.'
+        if not alt_title:
+            alt_title = 'qn alt list:'
+        main_files = alt_files
+        rofi_command = rofi_base_command + ['-mesg', HELP, '-format', 'f;s',
+                                            '-p', alt_title]
+    else:
+        HELP += (', "' + opt_filter_content + '" to search'
+                 + ', "' + opt_seetagm      + '" to see note\'s tags'
+                 + ', "' + opt_addtag       + '" to add tag.')
+        main_files,main_files_full = qn.list_files(qn.QNDIR)
+        rofi_command = rofi_base_command + ['-mesg', HELP, '-format', 'f;s',
+                                            '-p', 'qn:' ]
 
+    if prev_filter:
+        rofi_command += ['-filter', prev_filter]
+    SELFS,val = call_rofi(rofi_command, main_files)
     if (SELFS == None):
         sys.exit(1)
-
     FILTER,SEL = SELFS.split(';')
     #print('sel:' + SEL)
     #print('val:' + str(val))
@@ -98,36 +111,48 @@ def show_main_rofi(starting_filter=None):
         print('open dir - not yet implemented')
         sys.exit(1)
     elif (val == 24):
-        print('find content - not yet implemented')
-        RESULT = show_filtered_rofi(main_files_full, FILTER)
-        print("Opening " + RESULT + "...")
-        qn.qn_open_note(RESULT)
+        if alt_files:
+            print('No search function with alternative qn list')
+            sys.exit(1)
+        else:
+            RESULT = show_filtered_rofi(main_files_full, FILTER)
+            print("Opening " + RESULT + "...")
+            qn.open_note(RESULT)
     elif (val == 23):
-        if SEL.strip():
-            print("creating note " + FILTER + "...")
-            qn.qn_new_note(FILTER)
+        if not FILTER.strip():
+            sys.exit(0)
+        file_path = os.path.join(qn.QNDIR, FILTER.strip())
+        if os.path.isfile(file_path):
+            print(file_path + " is already a file...opening normally.")
+            qn.open_note(FILTER)
+        elif os.path.isdir(file_path):
+            print(file_path + " is a directory...doing nothing")
+        else:
+            print("Creating note " + FILTER + "...")
+            qn.new_note(FILTER)
     elif (val == 22):
-        print("show tagmenu - not yet implemented")
         show_tagmenu_rofi(SEL)
     elif (val == 21):
-        print("show tagbrowse - not yet implemented")
-        sys.exit(0)
+        show_tagbrowse_rofi()
     elif (val == 20):
-        print("add new tag - not yet implemented")
-        sys.exit(0)
+        print("add new tag")
+        show_tagprompt_rofi(SEL)
     else:
         if SEL.strip():
             path=os.path.join(qn.QNDIR, SEL)
             if os.path.isfile(path):
                 print("file found, edit...")
-                qn.qn_open_note(SEL)
+                qn.open_note(SEL)
             else:
                 print("file not found, create...")
-                qn.qn_new_note(SEL)
+                qn.new_note(SEL)
+
 
 def show_filtered_rofi(mff, FILTER):
+    
+
     HELP = "List of notes filtered for '" + FILTER + "'."
-    raw, fnotes, fcont = qn_find_in_notes(mff, FILTER.strip())
+    raw, fnotes, fcont = qn.find_in_notes(mff, FILTER.strip())
     rofi_command = rofi_base_command + ['-p', 'qn search', '-mesg', HELP, 
             '-columns', '1', '-format', 'i']
 
@@ -140,7 +165,6 @@ def show_filtered_rofi(mff, FILTER):
         fn_rel = os.path.relpath(fn, qn.QNDIR)
         if len(fn_rel) > 21:
             fn_rel = fn_rel[0:10] + '…' + fn_rel[-11:len(fn_rel)]
-
         fn_rel += "  :  " + fcont[n]
         final_list.append(fn_rel)
         n += 1
@@ -151,9 +175,12 @@ def show_filtered_rofi(mff, FILTER):
     
     return(fnotes[int(SEL)])
 
+
 def show_trash_rofi():
+
+
     HELP = 'Press enter to restore file'
-    trash_files, trash_files_full = qn._list_files(qn.QNTRASH)
+    trash_files, trash_files_full = qn.list_files(qn.QNTRASH)
     rofi_command = rofi_base_command + ['-mesg', HELP]
     SEL,val = call_rofi(rofi_command, trash_files)
     if (SEL == None):
@@ -161,76 +188,134 @@ def show_trash_rofi():
     if SEL.strip():
         show_undelete_rofi(SEL)
 
+
 def show_tagmenu_rofi(notename):
+
+
     HELP = 'Tag menu for "' + notename + '"\n'
     HELP += "'Enter' to edit tag, '" + opt_delete + "' to delete tag"
     TITLE = 'qn tag menu:'
 
     rofi_command = rofi_base_command[0:2] + ['-mesg', HELP, '-p', TITLE
-                    , '-columns', '1', '-format', 'i;s']
+                    , '-columns', '1', '-format', 's']
 
-    #here will be the options to edit/delete existing tags
     OPTIONS = []
-    #noftags = 0
-    #for tag in existing_tags:
-        #OPTIONS += [str(noftags+2)  + '. Tag: ' +  tag]
-    #    noftags += 1
-
-    existing_tags = ['japan', 'travel']
+    existing_tags = qn.list_note_tags(notename)
     OPTIONS += existing_tags # for now, I'm just showing tags
+    SEL,val = call_rofi(rofi_command, OPTIONS)
 
-    IS,val = call_rofi(rofi_command, OPTIONS)
-    if not IS:
+    if SEL == None:
         sys.exit(0)
-
-    INDEX,SEL = IS.split(';')
-    print('ind:' + INDEX)
     print('sel:' + SEL)
     print('val:' + str(val))
+
+    if (val == 28):
+        qn.del_note_tag(SEL, notename)
+        print('deleted tag ' + SEL + '...')
+    elif (val == 20):
+        show_tagprompt_rofi(notename)
+        print('add ' + SEL + ' tag to note' + notename)
+    else:
+        sys.exit(0)
+
+    sys.exit(0)
+
+
+def show_tagprompt_rofi(notename):
+
+
+    HELP = "Write tag you wish to add to " + notename + "."
+    HELP += "'" + opt_force_new + "' to force add tag"
+    title = 'qn add tag:'
+    existing_tags = qn.list_tags()
+    rofi_command = rofi_base_command + ['-mesg', HELP, '-p', title,
+                        '-format', 'f;s', '-columns', '1']
+    FSEL, val = call_rofi(rofi_command, existing_tags)
+    if not FSEL:
+        sys.exit(0)
+    FILTER,SEL = FSEL.split(';')
+    if (val == 23):
+        print("Force add tag '" + FILTER + "'")
+        qn.add_note_tag(FILTER, notename)
+    else:
+        print("Adding tag '" + SEL + "'")
+        qn.add_note_tag(SEL, notename)
+
     sys.exit(0)
 
 
 
+def show_tagbrowse_rofi():
+
+
+    tl_help = "'Enter' to see all notes with tag."
+    tl_title = "qn browse tags:"
+    tl_sel = show_tagslist_rofi(tl_help, tl_title)
+    filtered_notes = qn.list_notes_with_tags(tl_sel)
+    print(filtered_notes)
+    tb_title = "qn browse (" + tl_sel + ")"
+    show_main_rofi(alt_files=filtered_notes, alt_title=tb_title)
+
+
+def show_tagslist_rofi(HELP_MSG, ROFI_TITLE='qn taglist:'):
+
+
+    rofi_command = rofi_base_command[0:2] + ['-p', ROFI_TITLE,
+                        '-columns', '1', '-mesg', HELP_MSG]
+    tagslist = qn.list_tags()
+    SEL,val = call_rofi(rofi_command, tagslist)
+    if not SEL:
+        sys.exit(0)
+    return(SEL)
+
 
 def show_yesno_rofi(HELP_MSG):
+
+
     HELP="<span color=\"red\">"
     HELP+=HELP_MSG
     HELP+="</span>"
     rofi_command = rofi_base_command + ['-mesg', HELP, '-columns', '1']
     SEL,val = call_rofi(rofi_command, ['no','yes'])
-    
     if SEL:
         return(SEL == 'yes')
     else:
         sys.exit(1)
 
+
 def show_delete_rofi(note):
+
+
     HELP_MSG = "Are you sure you want to delete \"" + note + "\"?"
     if show_yesno_rofi(HELP_MSG):
         print("Deleting " + note)
-        qn._delete_note(note)
+        qn.delete_note(note)
     else:
         print("Not Deleting " + note)
 
+
 def show_undelete_rofi(note):
+
+
     HELP_MSG = "Are you sure you want to restore \"" + note + "\"?"
     if show_yesno_rofi(HELP_MSG):
         print("Restoring " + note)
-        qn._undelete_note(note)
+        qn.undelete_note(note)
     else:
         print("Not Restoring " + note)
 
+
 def show_rename_rofi(note):
+
+
     HELP = "Please write the new name for this file"
     rofi_command = rofi_base_command + ['-mesg', HELP, '-columns', '1',
                     '-p', 'qn', 'rename', '-filter', note]
-
     SEL, val = call_rofi(rofi_command, [''])
-
     if (SEL == None):
         sys.exit(1)
+    qn.qn_move_note(note.strip(), SEL.strip(), move_tags=True)
 
-    qn._move_note(note.strip(), SEL.strip())
 
 if __name__ == '__main__':
     qn.check_environment(True)

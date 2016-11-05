@@ -1,6 +1,8 @@
 import os
 import sys
 from subprocess import Popen,PIPE, call
+import pickle
+from datetime import datetime
 
 try:
     import magic # to detect mimetypes
@@ -8,20 +10,15 @@ except OSError:
     print("Please install python-magic. Exiting...")
     sys.exit(1)
 
-#import mmap
 
 #import time
 #timea = time.time()
 
-#import notify2
 
 # TO IMPLEMENT
-# * Find in notes (grep)
-# * Rename note
 # * open note's directory in ranger
 
 # User-defined Globals
-
 QNDIR = os.path.join(os.path.expanduser("~"), "syncthing/smalldocs/quicknotes")
 #QNDIR = os.path.join(os.path.expanduser("~"), "qn_test2")
 QNTERMINAL='urxvt'
@@ -32,13 +29,17 @@ QNEDITOR='nvim'
 # Globals
 QNDATA = os.path.join(QNDIR, '.qn')
 QNTRASH = os.path.join(QNDATA, 'trash')
+TAGF_PATH = os.path.join(QNDATA, 'tags.pickle')
 TERM_INTER = False
 
 
 # Check if program exists - linux only
 def cmd_exists(cmd):
+
+
     return call("type " + cmd, shell=True, 
         stdout=PIPE, stderr=PIPE) == 0
+
 
 # Define application launcher
 if cmd_exists('rifle'):
@@ -54,28 +55,38 @@ else:
     TERM_INTER=False
     text_editor = QNTERMINAL + ' -e ' + QNEDITOR
 
-# outdated option to detect mimetype? Still best it seems
+
+
+# Outdated option to detect mimetype? Still best it seems.
 def file_mime_type(filename):
+
+
     m = magic.open(magic.MAGIC_MIME_TYPE)
     m.load()
     return(m.file(filename))
 
+
 # Right now it includes hidden files - this needs to be fixed
-def _list_files(path):
+def list_files(path):
+
+
     file_l = [] 
     file_full_l = []
-
     for root, dirs, files in os.walk(path, topdown=True):
         for name in files:
             fp = os.path.join(root, name)
             fp_rel = os.path.relpath(fp, path)
+            # Ignore dotfiles
             if (fp_rel[0] == '.'):
                 continue
             file_l.append(fp_rel)
             file_full_l.append(fp)
     return(file_l, file_full_l)
 
-def _move_note(name1, name2, dest1=QNDIR, dest2=QNDIR):
+
+def move_note(name1, name2, dest1=QNDIR, dest2=QNDIR, move_tags=False):
+
+
     has_sp1 = False
     has_sp2 = False
 
@@ -97,17 +108,17 @@ def _move_note(name1, name2, dest1=QNDIR, dest2=QNDIR):
 
     full_dir1 = os.path.join(td1, sn1)
     full_dir2 = os.path.join(td2, sn2)
-
     if (full_dir1 == full_dir2):
-        print('Source and destination are the same. Doing nothing')
+        print('Source and destination are the same. Doing nothing.')
         sys.exit(0)
 
     # check if destination already exists
     if os.path.exists(full_dir2):
-        import datetime
-        print('Note with same name found, creating conflict')
-        full_dir2 += "-conflict-" 
-        full_dir2 += datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        print('Note with same name found, creating conflict.')
+        appended = "-conflict-" 
+        appended += datetime.now().strftime('%Y%m%d_%H%M%S')
+        full_dir2 +=  appended
+        name2 += appended
 
     if has_sp2:
         if not ( os.path.isdir(td2)):
@@ -116,6 +127,12 @@ def _move_note(name1, name2, dest1=QNDIR, dest2=QNDIR):
     # move the file
     try:
         os.rename(full_dir1, full_dir2)
+        if move_tags:
+            tagsdict = load_tags()
+            if name1 in tagsdict:
+                tagsdict[name2] = tagsdict[name1]
+                tagsdict.pop(name1)
+                save_tags(tagsdict)
         print('Moved ' + full_dir1 + ' to ' + full_dir2)
     except OSError:
         sys.exit(1)
@@ -125,26 +142,28 @@ def _move_note(name1, name2, dest1=QNDIR, dest2=QNDIR):
             os.rmdir(td1)
             print('deleted ' + td1)
         except OSError:
-            sys.exit(1)
+            print('not deleted ' + td1)
+            sys.exit(0)
 
     sys.exit(0)
 
 
-def _delete_note(note):
-    _move_note(note, note, dest1=QNDIR, dest2=QNTRASH)
+def delete_note(note):
 
-def _undelete_note(note):
-    _move_note(note, note, dest1=QNTRASH, dest2=QNDIR)
 
-#def notify_send(noti):
-#    notify2.init('qn')
-#    n = notify2.Notification(noti)
-#    n.show()
+    move_note(note, note, dest1=QNDIR, dest2=QNTRASH)
 
-# Opens everything in text...mimetypes pls
-def qn_open_note(note):
+
+def undelete_note(note):
+
+
+    move_note(note, note, dest1=QNTRASH, dest2=QNDIR)
+
+
+def open_note(note):
+
+
     fulldir = os.path.join(QNDIR, note)
-
     if os.path.isfile(fulldir):
         mime = file_mime_type(fulldir).split('/')
         if (mime[0] == 'text'):
@@ -154,10 +173,13 @@ def qn_open_note(note):
         else:
             os.system(file_launcher + " " + fulldir)
     else:
+        print(fulldir + " is not a note")
         sys.exit(1)
 
 
-def qn_new_note(note):
+def new_note(note):
+
+
     if '/' in note:
         note_dir = note.rsplit('/',1)[0]
         if not os.path.isdir(note_dir):
@@ -167,8 +189,9 @@ def qn_new_note(note):
     return(0)
 
 
-# In implementation - not yet working
-def qn_find_in_notes(file_list, f_string):
+def find_in_notes(file_list, f_string):
+
+
     grep_path = os.path.join(QNDIR, '*')
     filt = f_string.strip().split(" ") 
     filtered_list = file_list
@@ -177,7 +200,6 @@ def qn_find_in_notes(file_list, f_string):
         proc = Popen(['grep', '-i', '-I',  keyword] + filtered_list, stdout=PIPE)
         answer = proc.stdout.read().decode('utf-8')
         exit_code = proc.wait()
-        # trim whitespace
         if answer == '':
             return(None, exit_code)
 
@@ -188,7 +210,6 @@ def qn_find_in_notes(file_list, f_string):
         for ans in answer.split('\n'):
             if ans.strip() == '':
                 continue
-    #        print(ans)
             raw_lines.append(ans)
             note_name, note_content = ans.split(':', 1)
             if note_name in filtered_list:
@@ -196,13 +217,14 @@ def qn_find_in_notes(file_list, f_string):
             else:
                 filtered_list.append(note_name)
                 filtered_content.append(note_content)
-
+    # this return is a bit messy, but for now it affords current functionality.
     return(raw_lines, filtered_list, filtered_content)
 
-def check_environment(in_rofi=False):
-    # Make sure everything is ready for qn
 
-    #print("Checking qn directory " + QNDIR + "...")
+def check_environment(in_rofi=False):
+
+
+    # Make sure everything is ready for qn
     if not os.path.isdir(QNDIR):
         HELP_MSG = " Do you want to create the qn directory: " + QNDIR + "?"
         if in_rofi:
@@ -230,11 +252,136 @@ def check_environment(in_rofi=False):
         print("Creating directory: " + QNTRASH + "...")
         os.makedirs(QNTRASH, exist_ok=True)
 
+    if not os.path.isfile(TAGF_PATH):
+        tagfile = open(TAGF_PATH, 'wb')
+        pickle.dump({'__taglist':[]}, tagfile)
+        tagfile.close()
 
-#def start_qnr ():
-#    in_rofi = True
-#    check_environment(in_rofi)
-#    show_main_rofi()
 
-#start_qnr()
-#timeb = time.time()
+# FOR TAG SUPPORT
+def load_tags():
+
+
+    tagfile = open(TAGF_PATH, 'rb')
+    tagdict = pickle.load(tagfile)
+    tagfile.close()
+
+    return(tagdict)
+
+
+def save_tags(newdict):
+
+
+    tagfile = open(TAGF_PATH, 'wb')
+    pickle.dump(newdict, tagfile)
+    tagfile.close()
+
+
+def list_tags():
+
+
+    tagslist = load_tags()['__taglist']
+    return(tagslist)
+
+
+def create_tag(tagname):
+
+
+    tagsdict = load_tags()
+    if not tagname in tagsdict['__taglist']:
+        tagsdict['__taglist'].append(tagname)
+        save_tags(tagsdict)
+
+    return(tagsdict)
+
+
+def add_note_tag(tagname, notename, tagsdict=None):
+
+
+    if not os.path.isfile(os.path.join(QNDIR, notename)):
+        print('Note does not exist. No tag added.')
+        sys.exit(0)
+    tagsdict = create_tag(tagname)
+    if notename in tagsdict:
+        if tagname in tagsdict[notename]:
+            print('Note already has tag. Doing nothing')
+        else:
+            tagsdict[notename].append(tagname)
+            save_tags(tagsdict)
+    else:
+        tagsdict[notename] = [tagname]
+        save_tags(tagsdict)
+
+    return(tagsdict)
+
+
+def del_note_tag(tagname, notename, tagsdict=None):
+
+
+    if not os.path.isfile(os.path.join(QNDIR, notename)):
+        print('Note does not exist. No tag removed.')
+        sys.exit(0)
+
+    if not tagsdict:
+        tagsdict = load_tags()
+    
+    if notename in tagsdict:
+        if tagname in tagsdict[notename]:
+            tagsdict[notename].remove(tagname)
+            if not list_notes_with_tags(tagname, tagsdict):
+                tagsdict['__taglist'].remove(tagname)
+            save_tags(tagsdict)
+    else:
+        pass
+
+    return(tagsdict)
+
+
+def clear_note_tags(notename, tagsdict=None):
+
+
+    if not os.path.isfile(os.path.join(QNDIR, notename)):
+        print('Note does not exist. Doing nothing.')
+        sys.exit(0)
+    if not tagsdict:
+        tagsdict = load_tags()
+    tagsdict.pop(notename, None)
+
+    return(tagsdict)
+
+
+def list_note_tags(notename):
+
+
+    if not os.path.isfile(os.path.join(QNDIR, notename)):
+        print('Note does not exist.')
+        sys.exit(0)
+
+    tagsdict = load_tags()
+    if notename in tagsdict:
+        return(tagsdict[notename])
+    else:
+        return([])
+
+
+def list_notes_with_tags(tagname, tagsdict=None):
+
+
+    if not tagsdict:
+        tagsdict = load_tags()
+    
+    filtered_list = []
+    for key,value in tagsdict.items():
+        if key == '__taglist':
+            continue
+        if tagname in value:
+            filtered_list.append(key)
+
+    return(filtered_list)
+
+
+ 
+
+if __name__ == '__main__':
+    pass
+
