@@ -1,14 +1,20 @@
 # qn
 
-Quick Notes
+# Quick Notes
 
-This script is meant to manage notes in a directory. A note is defined as any
-file within the notes directory. Text files are preferred, but you can put any
-file and qnr will be able to open it. No fancy functionalities are implemented
-here, it is not meant to replace more robust applications.
+Note management application that doesn't impose strict formats or requirements.
+qn defines a note to be any file within the configured notes directory. While
+text files with any syntax are preferred, you can put any type of file and qn
+will open it via rifle or xdg-open. Fancy functionalities are kept to a
+minimum, and no per-file metadata is ever created. The only application data
+created is kept in a .qn directory inside the notes directory.
 
-This is naive and simple by design, but I would like to implement a few
-niceties.
+As of right now, this application relies on rofi. However, I'd like to make it
+easy to switch the underlying applications. qn is composed of a few python
+scripts that puts together terminal and graphical applications.
+
+This application is naive and simple by design, but I do intend to implement a
+few niceties.
 
 # Features
 * rofi interface
@@ -21,27 +27,14 @@ niceties.
 
 * rofi (pretty much any version)
 * rifle (from ranger file manager--if not installed xdg-open will be used)
-* i3 (for i3-sensible-terminal...need to fix this)
-* libnotify
+* python-magic for mimetype detection
 
 # Installation
+I will make the installation easier soon.
 
 1. git clone https://github.com/mbfraga/qn
 
-2. cp qn/qn.sh ~/bin/qn
+2. create a file ~/bin/qnr that runs the python script qnr.py 
 
-3. My focus at the moment is the rofi interface, o I suggest the following:
-   - echo '#!/bin/bash\nsh ~/bin/qn.sh -r' > ~/bin/qnr
+3. Edit qnr.py and change the qn directory
 
-4. chmod +x ~/bin/{qn,qnr}
-
-3. Modify the ~/bin/qn script for the following entries
-   * QNDIR - notes directory, you must create this directory -- this script
-     will not do it for you. (this is the only setting you absolutely need in
-     order for the script to work)
-   * QNTRASH - trash directory, I suggest leaving the default as "$QNDIR/trash"
-      - this directory is excluded from being indexed
-      - you can see files in the trash with qnr by pressing Alt+t
-   * PERSISTENT (true/false) - this boolean makes it so that whenever you close
-     a note, qnr is run again. It can be annoying or useful depending on
-     workflow.
