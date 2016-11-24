@@ -29,6 +29,22 @@ opt_addtag = 'Alt+n'
 
 rofi_base_command = ['rofi', '-dmenu', '-i']#, '-p', 'qn:']
 
+HELP_M = ('"Enter" to edit/create, ' 
+          + '"' + opt_force_new + '" to force create, "'
+          + '"' + opt_delete    + '" to delete, "'
+          + '"' + opt_seetrash  + '" to show trash, "'
+          + '"' + opt_rename    + '" to rename'
+          + ', "' + opt_filter_content + '" to search'
+          + ', "' + opt_seetagm      + '" to see note\'s tags'
+          + ', "' + opt_seetagb      + '" to see tag browse'
+          + ', "' + opt_addtag       + '" to add tag.')
+HELP_ALT = ('"Enter" to edit/create, ' 
+            + '"' + opt_force_new + '" to force create, "'
+            + '"' + opt_delete    + '" to delete, "'
+            + '"' + opt_seetrash  + '" to show trash, "'
+            + '"' + opt_rename    + '" to rename'
+            + '.')
+
 
 # call_rofi code borrowed from
 def call_rofi(rofi_command, entries, additional_args=[]):
@@ -81,33 +97,11 @@ def show_main_rofi(prev_filter=None, files_l=None
         if help_s:
             help_m = ['-mesg', help_s]
         else:
-            help_m = ['-mesg', 'Fuck You.']
+            help_m = ['-mesg', HELP_M]
         main_files,main_files_full = qn.list_files(qn.QNDIR)
 
     rofi_command = rofi_base_command + help_m + ['-format', 'f;s',
                                                  '-p', title_s]
-    #HELP  = ('"Enter" to edit/create, ' 
-    #         + '"' + opt_force_new + '" to force create, "'
-    #         + '"' + opt_delete    + '" to delete, "'
-    #         + '"' + opt_seetrash  + '" to show trash, "'
-    #         + '"' + opt_rename    + '" to rename')
-
-    # for now, custom lists can't be filtered.
-    #if alt_files:
-        #HELP += '.'
-        #main_files = alt_files
-        #rofi_command = rofi_base_command + ['-mesg', HELP, '-format', 'f;s',
-        #                                    '-p', alt_title]
-    #else:
-        #HELP += (', "' + opt_filter_content + '" to search'
-        #         + ', "' + opt_seetagm      + '" to see note\'s tags'
-        #         + ', "' + opt_addtag       + '" to add tag.')
-        #if not alt_title:
-        #    rofi_command = rofi_base_command + ['-mesg', HELP, '-format', 'f;s',
-        #                                        '-p', 'qn:' ]
-        #else:
-        #    rofi_command = rofi_base_command + ['-mesg', HELP, '-format', 'f;s',
-        #                                        '-p', alt_title]
 
 
     if prev_filter:
@@ -178,7 +172,6 @@ def show_filtered_rofi(mff, FILTER):
 
     if not raw and not fnotes and not fcont:
         show_main_rofi(help_s = "No results found for '" + FILTER + "'")
-        print("FUCK YOU")
 
     if FILTER == '':
         show_main_rofi()
