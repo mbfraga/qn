@@ -22,7 +22,6 @@ except OSError:
 QNDIR = os.path.join(os.path.expanduser("~"), "syncthing/smalldocs/quicknotes")
 #QNDIR = os.path.join(os.path.expanduser("~"), "qn_test2")
 QNTERMINAL='urxvt'
-#QNBROWSER=chromium # not used
 QNEDITOR='nvim'
 
 
@@ -201,7 +200,7 @@ def find_in_notes(file_list, f_string):
         answer = proc.stdout.read().decode('utf-8')
         exit_code = proc.wait()
         if answer == '':
-            return(None, exit_code)
+            return(None, None, None)
 
         filtered_list = []
         filtered_content = []

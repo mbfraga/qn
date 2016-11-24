@@ -45,11 +45,6 @@ def call_rofi(rofi_command, entries, additional_args=[]):
                              '-kb-custom-11', opt_addtag,
                              '-sep', '\\0',
                              '-columns', str(COLS),
-#                             '-markup-rows',
-#                             '-format', 'i',
-#                             '-lines', '4',
-#                             '-eh', '2',
-#                             '-location', '2', '-width', '100' ])
                              ])
 
     proc = Popen(rofi_command + additional_args, stdin=PIPE, stdout=PIPE)
@@ -67,29 +62,53 @@ def call_rofi(rofi_command, entries, additional_args=[]):
         return(answer.strip('\n'), exit_code)
 
 
-def show_main_rofi(prev_filter=None, alt_files=None, alt_title=None):
+def show_main_rofi(prev_filter=None, files_l=None
+                   , title_s=None, help_s=None):
 
 
-    HELP  = ('"Enter" to edit/create, ' 
-             + '"' + opt_force_new + '" to force create, "'
-             + '"' + opt_delete    + '" to delete, "'
-             + '"' + opt_seetrash  + '" to show trash, "'
-             + '"' + opt_rename    + '" to rename')
-    # for now, custom lists can't be filtered.
-    if alt_files:
-        HELP += '.'
-        if not alt_title:
-            alt_title = 'qn alt list:'
-        main_files = alt_files
-        rofi_command = rofi_base_command + ['-mesg', HELP, '-format', 'f;s',
-                                            '-p', alt_title]
+    if files_l:
+        if not title_s:
+            title_s = "qn alt list:"
+        if help_s:
+            help_m = ['-mesg', help_s]
+        else:
+            help_m = []
+        main_files = files_l
+        main_files_full = None
     else:
-        HELP += (', "' + opt_filter_content + '" to search'
-                 + ', "' + opt_seetagm      + '" to see note\'s tags'
-                 + ', "' + opt_addtag       + '" to add tag.')
+        if not title_s:
+            title_s = "qn:"
+        if help_s:
+            help_m = ['-mesg', help_s]
+        else:
+            help_m = ['-mesg', 'Fuck You.']
         main_files,main_files_full = qn.list_files(qn.QNDIR)
-        rofi_command = rofi_base_command + ['-mesg', HELP, '-format', 'f;s',
-                                            '-p', 'qn:' ]
+
+    rofi_command = rofi_base_command + help_m + ['-format', 'f;s',
+                                                 '-p', title_s]
+    #HELP  = ('"Enter" to edit/create, ' 
+    #         + '"' + opt_force_new + '" to force create, "'
+    #         + '"' + opt_delete    + '" to delete, "'
+    #         + '"' + opt_seetrash  + '" to show trash, "'
+    #         + '"' + opt_rename    + '" to rename')
+
+    # for now, custom lists can't be filtered.
+    #if alt_files:
+        #HELP += '.'
+        #main_files = alt_files
+        #rofi_command = rofi_base_command + ['-mesg', HELP, '-format', 'f;s',
+        #                                    '-p', alt_title]
+    #else:
+        #HELP += (', "' + opt_filter_content + '" to search'
+        #         + ', "' + opt_seetagm      + '" to see note\'s tags'
+        #         + ', "' + opt_addtag       + '" to add tag.')
+        #if not alt_title:
+        #    rofi_command = rofi_base_command + ['-mesg', HELP, '-format', 'f;s',
+        #                                        '-p', 'qn:' ]
+        #else:
+        #    rofi_command = rofi_base_command + ['-mesg', HELP, '-format', 'f;s',
+        #                                        '-p', alt_title]
+
 
     if prev_filter:
         rofi_command += ['-filter', prev_filter]
@@ -111,7 +130,7 @@ def show_main_rofi(prev_filter=None, alt_files=None, alt_title=None):
         print('open dir - not yet implemented')
         sys.exit(1)
     elif (val == 24):
-        if alt_files:
+        if files_l:
             print('No search function with alternative qn list')
             sys.exit(1)
         else:
@@ -147,6 +166,7 @@ def show_main_rofi(prev_filter=None, alt_files=None, alt_title=None):
                 print("file not found, create...")
                 qn.new_note(SEL)
 
+    sys.exit(0)
 
 def show_filtered_rofi(mff, FILTER):
     
@@ -155,6 +175,10 @@ def show_filtered_rofi(mff, FILTER):
     raw, fnotes, fcont = qn.find_in_notes(mff, FILTER.strip())
     rofi_command = rofi_base_command + ['-p', 'qn search', '-mesg', HELP, 
             '-columns', '1', '-format', 'i']
+
+    if not raw and not fnotes and not fcont:
+        show_main_rofi(help_s = "No results found for '" + FILTER + "'")
+        print("FUCK YOU")
 
     if FILTER == '':
         show_main_rofi()
@@ -254,7 +278,7 @@ def show_tagbrowse_rofi():
     filtered_notes = qn.list_notes_with_tags(tl_sel)
     print(filtered_notes)
     tb_title = "qn browse (" + tl_sel + ")"
-    show_main_rofi(alt_files=filtered_notes, alt_title=tb_title)
+    show_main_rofi(files_l=filtered_notes, title_s=tb_title)
 
 
 def show_tagslist_rofi(HELP_MSG, ROFI_TITLE='qn taglist:'):
