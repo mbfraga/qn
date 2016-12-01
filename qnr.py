@@ -110,8 +110,8 @@ def show_main_rofi(prev_filter=None, files_l=None
     if (SELFS == None):
         sys.exit(1)
     FILTER,SEL = SELFS.split(';')
-    #print('sel:' + SEL)
-    #print('val:' + str(val))
+    print('sel:' + SEL)
+    print('val:' + str(val))
 
     if (val == 28):
         show_delete_rofi(SEL)
@@ -124,6 +124,7 @@ def show_main_rofi(prev_filter=None, files_l=None
         print('open dir - not yet implemented')
         sys.exit(1)
     elif (val == 24):
+        print("DEBUG")
         if files_l:
             print('No search function with alternative qn list')
             sys.exit(1)
@@ -132,6 +133,7 @@ def show_main_rofi(prev_filter=None, files_l=None
             print("Opening " + RESULT + "...")
             qn.open_note(RESULT)
     elif (val == 23):
+        # Force Open
         if not FILTER.strip():
             sys.exit(0)
         file_path = os.path.join(qn.QNDIR, FILTER.strip())
@@ -163,7 +165,7 @@ def show_main_rofi(prev_filter=None, files_l=None
     sys.exit(0)
 
 def show_filtered_rofi(mff, FILTER):
-    
+
 
     HELP = "List of notes filtered for '" + FILTER + "'."
     raw, fnotes, fcont = qn.find_in_notes(mff, FILTER.strip())
@@ -230,8 +232,8 @@ def show_tagmenu_rofi(notename):
         qn.del_note_tag(SEL, notename)
         print('deleted tag ' + SEL + '...')
     elif (val == 20):
-        show_tagprompt_rofi(notename)
-        print('add ' + SEL + ' tag to note' + notename)
+        TAG = show_tagprompt_rofi(notename)
+        print('Added "' + TAG + '" tag to note "' + notename +'"')
     else:
         sys.exit(0)
 
@@ -254,9 +256,11 @@ def show_tagprompt_rofi(notename):
     if (val == 23):
         print("Force add tag '" + FILTER + "'")
         qn.add_note_tag(FILTER, notename)
+        return(FILTER)
     else:
         print("Adding tag '" + SEL + "'")
         qn.add_note_tag(SEL, notename)
+        return(SEL)
 
     sys.exit(0)
 
@@ -331,7 +335,7 @@ def show_rename_rofi(note):
     SEL, val = call_rofi(rofi_command, [''])
     if (SEL == None):
         sys.exit(1)
-    qn.qn_move_note(note.strip(), SEL.strip(), move_tags=True)
+    qn.move_note(note.strip(), SEL.strip(), move_tags=True)
 
 
 if __name__ == '__main__':
