@@ -17,11 +17,13 @@ This application is naive and simple by design, but I do intend to implement a
 few niceties.
 
 # Features
-* rofi interface
+* rofi or fzf(cli) interface
    - Quickly filter notes
    - Open/Create New/Delete/Rename Notes
    - Nondestructive. Deleted files are moved to a trash directory, and
      conflicts are stored.
+   - Quickly grep files (e.g., type a query in qnr, and press alt-s)
+   - Rudimentary tag management (qn-specific, no metadata is stored in files)
 
 # Dependencies
 
@@ -36,5 +38,8 @@ I will make the installation easier soon.
 
 2. create a file ~/bin/qnr that runs the python script qnr.py 
 
-3. Edit qnr.py and change the qn directory
+3. Edit qn.py and change the qn directory (QNDIR)
+
+Note: Check the keybindings at the beginning of qnr.py and qnf.py to see the
+keybindings. I will make help screens in the near future.
 
