@@ -6,7 +6,7 @@ import struct
 import qn
 
 
-
+INTERACTIVE=True
 fzf_base_command = ['fzf']
 HELP_M = ""
 HELP_ALT = ""
@@ -98,15 +98,15 @@ def show_main_fzf(prev_filter=None, files_l=None, title_s=None, help_s=None):
     if not KEY:
         if not SEL:
             print("file not found, create...")
-            qn.new_note(FILTER)
+            qn.new_note(FILTER, INTERACTIVE)
         else:
             path=os.path.join(qn.QNDIR, SEL.strip())
             if os.path.isfile(path):
                 print("file found, edit...")
-                qn.open_note(SEL)
+                qn.open_note(SEL, INTERACTIVE)
             else:
                 print("file not found, create...")
-                qn.new_note(FILTER)
+                qn.new_note(FILTER, INTERACTIVE)
 
     else:
         key_action = keybindings[KEY]
@@ -118,12 +118,12 @@ def show_main_fzf(prev_filter=None, files_l=None, title_s=None, help_s=None):
             file_path = os.path.join(qn.QNDIR, FILTER.strip())
             if os.path.isfile(file_path):
                 print(file_path + " is already a file...opening normally.")
-                qn.open_note(FILTER)
+                qn.open_note(FILTER, INTERACTIVE)
             elif os.path.isdir(file_path):
                 print(file_path + " is a directory...doing nothing")
             else:
                 print("Creating note " + FILTER + "...")
-                qn.new_note(FILTER)
+                qn.new_note(FILTER, INTERACTIVE)
         elif key_action == 'opt_filter_content':
             if files_l:
                 print('No search fucntion with alternative qn list')
@@ -131,7 +131,7 @@ def show_main_fzf(prev_filter=None, files_l=None, title_s=None, help_s=None):
             else:
                 RESULT=show_filtered_fzf(main_files_full, FILTER)
                 print("Opening " + RESULT + "...")
-                qn.open_note(RESULT)
+                qn.open_note(RESULT, INTERACTIVE)
         elif key_action == 'opt_seetrash':
             show_trash_fzf()
         elif key_action == 'opt_delete':

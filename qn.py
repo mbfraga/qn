@@ -47,13 +47,12 @@ else:
     file_launcher = 'xdg-open'
 
 # Check if interactive terminal or not
-if sys.stdin.isatty():
-    TERM_INTER=True
-    text_editor = QNEDITOR
-else:
-    TERM_INTER=False
-    text_editor = QNTERMINAL + ' -e ' + QNEDITOR
-
+# if sys.stdin.isatty():
+#    TERM_INTER=True
+#    text_editor = QNEDITOR
+# else:
+#     TERM_INTER=False
+#     text_editor = QNTERMINAL + ' -e ' + QNEDITOR
 
 
 # Outdated option to detect mimetype? Still best it seems.
@@ -159,16 +158,22 @@ def undelete_note(note):
     move_note(note, note, dest1=QNTRASH, dest2=QNDIR)
 
 
-def open_note(note):
+def open_note(note, inter=False):
 
 
     fulldir = os.path.join(QNDIR, note)
     if os.path.isfile(fulldir):
         mime = file_mime_type(fulldir).split('/')
         if (mime[0] == 'text'):
-            os.system(text_editor + " " + fulldir)
+            if inter:
+                os.system(QNEDITOR + " " + fulldir)
+            else:
+                os.system(QNTERMINAL + " -e " + QNEDITOR + " " + fulldir)
         elif (mime[1] == 'x-empty'):
-            os.system(text_editor + " " + fulldir)
+            if inter:
+                os.system(QNEDITOR + " " + fulldir)
+            else:
+                os.system(QNTERMINAL + " -e " + QNEDITOR + " " + fulldir)
         else:
             os.system(file_launcher + " " + fulldir)
     else:
@@ -176,7 +181,7 @@ def open_note(note):
         sys.exit(1)
 
 
-def new_note(note):
+def new_note(note, inter=False):
 
 
     if '/' in note:
@@ -184,7 +189,11 @@ def new_note(note):
         if not os.path.isdir(note_dir):
             os.makedirs(os.path.join(QNDIR, note_dir), exist_ok=True)
 
-    os.system(text_editor + " " + os.path.join(QNDIR, note))
+    if inter:
+        os.system(QNEDITOR + " " + os.path.join(QNDIR, note))
+    else:
+        os.system(QNTERMINAL + " -e " + QNEDITOR + " " + os.path.join(QNDIR, note))
+
     return(0)
 
 

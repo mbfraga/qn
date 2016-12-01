@@ -26,6 +26,7 @@ opt_seetagb = 'Alt+i'
 # Add Tag to note.
 opt_addtag = 'Alt+n'
 
+INTERACTIVE = False
 
 rofi_base_command = ['rofi', '-dmenu', '-i']#, '-p', 'qn:']
 
@@ -131,7 +132,7 @@ def show_main_rofi(prev_filter=None, files_l=None
         else:
             RESULT = show_filtered_rofi(main_files_full, FILTER)
             print("Opening " + RESULT + "...")
-            qn.open_note(RESULT)
+            qn.open_note(RESULT, INTERACTIVE)
     elif (val == 23):
         # Force Open
         if not FILTER.strip():
@@ -139,12 +140,12 @@ def show_main_rofi(prev_filter=None, files_l=None
         file_path = os.path.join(qn.QNDIR, FILTER.strip())
         if os.path.isfile(file_path):
             print(file_path + " is already a file...opening normally.")
-            qn.open_note(FILTER)
+            qn.open_note(FILTER, INTERACTIVE)
         elif os.path.isdir(file_path):
             print(file_path + " is a directory...doing nothing")
         else:
             print("Creating note " + FILTER + "...")
-            qn.new_note(FILTER)
+            qn.new_note(FILTER, INTERACTIVE)
     elif (val == 22):
         show_tagmenu_rofi(SEL)
     elif (val == 21):
@@ -157,10 +158,10 @@ def show_main_rofi(prev_filter=None, files_l=None
             path=os.path.join(qn.QNDIR, SEL)
             if os.path.isfile(path):
                 print("file found, edit...")
-                qn.open_note(SEL)
+                qn.open_note(SEL, INTERACTIVE)
             else:
                 print("file not found, create...")
-                qn.new_note(SEL)
+                qn.new_note(SEL, INTERACTIVE)
 
     sys.exit(0)
 
