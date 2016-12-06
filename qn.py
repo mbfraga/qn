@@ -10,11 +10,6 @@ except OSError:
     print("Please install python-magic. Exiting...")
     sys.exit(1)
 
-
-#import time
-#timea = time.time()
-
-
 # TO IMPLEMENT
 # * open note's directory in ranger
 
