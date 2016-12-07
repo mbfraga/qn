@@ -3,12 +3,7 @@ import sys
 from subprocess import Popen,PIPE, call
 import pickle
 from datetime import datetime
-
-try:
-    import magic # to detect mimetypes
-except OSError:
-    print("Please install python-magic. Exiting...")
-    sys.exit(1)
+import mimetypes
 
 # TO IMPLEMENT
 # * open note's directory in ranger
@@ -53,10 +48,13 @@ else:
 # Outdated option to detect mimetype? Still best it seems.
 def file_mime_type(filename):
 
+    mtype,menc = mimetypes.guess_type(filename)
 
-    m = magic.open(magic.MAGIC_MIME_TYPE)
-    m.load()
-    return(m.file(filename))
+    # If type is not detected, just open as plain text
+    if not mtype:
+        mtype = 'None/None'
+
+    return(mtype)
 
 
 # Right now it includes hidden files - this needs to be fixed
@@ -158,8 +156,9 @@ def open_note(note, inter=False):
 
     fulldir = os.path.join(QNDIR, note)
     if os.path.isfile(fulldir):
-        mime = file_mime_type(fulldir).split('/')
-        if (mime[0] == 'text'):
+        mime = file_mime_type(note).split("/")
+
+        if (mime[0] == 'text' or mime[0] == 'None'):
             if inter:
                 os.system(QNEDITOR + " " + fulldir)
             else:

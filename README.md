@@ -39,8 +39,6 @@ can even sync it to devices with very little storage.
 
 * rofi (pretty much any version) for qnr.py, fzf for qnf.py
 * rifle (from ranger file manager--if not installed xdg-open will be used)
-* python-magic for mimetype detection (I absolutely dislike this dependency,
-    and want to look for a better alternative)
 
 # Todo
 
