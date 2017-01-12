@@ -2,17 +2,18 @@ import os
 import sys
 from subprocess import Popen,PIPE,call
 import struct
+import argparse
 
 import qn
 
 # User Settings
 COLS=3
 # Delete note.
-opt_delete = 'Alt+Backspace'
+opt_delete = 'Alt+r'
 # See trashed notes with the ability to restore them.
 opt_seetrash = 'Alt+t'
 # Rename note.
-opt_rename = 'Alt+Space'
+opt_rename = 'Alt+space'
 # Open selected note's directory (not yet implemented).
 opt_open_dir = 'Alt+d'
 # Grep notes (not yet implemented).
@@ -28,7 +29,7 @@ opt_addtag = 'Alt+n'
 
 INTERACTIVE = False
 
-rofi_base_command = ['rofi', '-dmenu', '-i']#, '-p', 'qn:']
+rofi_base_command = ['rofi', '-dmenu', '-i', '-width', '50', '-lines', '15', '-p', 'qn:']
 
 HELP_M = ('"Enter" to edit/create, ' 
           + '"' + opt_force_new + '" to force create, "'
@@ -45,6 +46,11 @@ HELP_ALT = ('"Enter" to edit/create, '
             + '"' + opt_seetrash  + '" to show trash, "'
             + '"' + opt_rename    + '" to rename'
             + '.')
+
+
+
+#parser = argparse.ArgumentParser(description='Quick note manager')
+#parser.add_argument('-I', dest='interactive', action='store_true')
 
 
 # call_rofi code borrowed from
@@ -342,3 +348,5 @@ def show_rename_rofi(note):
 if __name__ == '__main__':
     qn.check_environment(True)
     show_main_rofi()
+    #args = parser.parse_args()
+    #print(args.interactive)
