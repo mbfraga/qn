@@ -15,6 +15,7 @@ keybindings = {}
 keybindings['alt-bspace'] = 'opt_delete'
 keybindings['alt-t'] = 'opt_seetrash'
 keybindings['alt-space'] = 'opt_rename'
+keybindings['alt-r'] = 'opt_rename'
 keybindings['alt-d'] = 'opt_open_dir'
 keybindings['alt-f'] = 'opt_filter_content' #alt-s is eaten by terminal
 keybindings['alt-return'] = 'opt_force_new'

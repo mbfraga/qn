@@ -3,17 +3,7 @@ import sys
 from subprocess import Popen,PIPE, call
 import pickle
 from datetime import datetime
-
-try:
-    import magic # to detect mimetypes
-except OSError:
-    print("Please install python-magic. Exiting...")
-    sys.exit(1)
-
-
-#import time
-#timea = time.time()
-
+import mimetypes
 
 # TO IMPLEMENT
 # * open note's directory in ranger
@@ -21,6 +11,7 @@ except OSError:
 # User-defined Globals
 QNDIR = os.path.join(os.path.expanduser("~"), "syncthing/smalldocs/quicknotes")
 #QNDIR = os.path.join(os.path.expanduser("~"), "qn_test2")
+#QNDIR = os.path.join(os.path.expanduser("~"), "qn_test3")
 QNTERMINAL='urxvt'
 QNEDITOR='nvim'
 
@@ -46,22 +37,14 @@ if cmd_exists('rifle'):
 else:
     file_launcher = 'xdg-open'
 
-# Check if interactive terminal or not
-# if sys.stdin.isatty():
-#    TERM_INTER=True
-#    text_editor = QNEDITOR
-# else:
-#     TERM_INTER=False
-#     text_editor = QNTERMINAL + ' -e ' + QNEDITOR
 
-
-# Outdated option to detect mimetype? Still best it seems.
 def file_mime_type(filename):
 
-
-    m = magic.open(magic.MAGIC_MIME_TYPE)
-    m.load()
-    return(m.file(filename))
+    mtype,menc = mimetypes.guess_type(filename)
+    # If type is not detected, just open as plain text
+    if not mtype:
+        mtype = 'None/None'
+    return(mtype)
 
 
 # Right now it includes hidden files - this needs to be fixed
@@ -163,8 +146,9 @@ def open_note(note, inter=False):
 
     fulldir = os.path.join(QNDIR, note)
     if os.path.isfile(fulldir):
-        mime = file_mime_type(fulldir).split('/')
-        if (mime[0] == 'text'):
+        mime = file_mime_type(note).split("/")
+
+        if (mime[0] == 'text' or mime[0] == 'None'):
             if inter:
                 os.system(QNEDITOR + " " + fulldir)
             else:
@@ -259,7 +243,6 @@ def check_environment(in_rofi=False):
     if not os.path.exists(QNTRASH):
         print("Creating directory: " + QNTRASH + "...")
         os.makedirs(QNTRASH, exist_ok=True)
-
     if not os.path.isfile(TAGF_PATH):
         tagfile = open(TAGF_PATH, 'wb')
         pickle.dump({'__taglist':[]}, tagfile)
@@ -391,5 +374,9 @@ def list_notes_with_tags(tagname, tagsdict=None):
  
 
 if __name__ == '__main__':
-    pass
+    check_environment()
+    files, files_f = list_files(QNDIR)
+    for note in files:
+        print(note)
 
+    print("\nNumber of files: " + str(len(files)) + ".")
