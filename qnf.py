@@ -5,7 +5,6 @@ import struct
 
 import qn
 
-
 INTERACTIVE=True
 fzf_base_command = ['fzf']
 HELP_M = ""
@@ -57,9 +56,10 @@ def call_fzf(fzf_command, entries, additional_args=[]):
         return(answer_l, exit_code)
 
 
-def show_main_fzf(prev_filter=None, files_l=None, title_s=None, help_s=None):
+def show_main_fzf(prev_filter=None, file_list=None, title_s=None, help_s=None
+                  , sortby=qn.SORTBY, sortrev=qn.SORTREV):
 
-    if files_l:
+    if file_list:
         if not title_s:
             TITLE = "--prompt=qn alt list > "
         else:
@@ -68,8 +68,8 @@ def show_main_fzf(prev_filter=None, files_l=None, title_s=None, help_s=None):
             HELP = '--header=' + help_s
         else:
             HELP = '--header=' + HELP_ALT 
-        main_files = files_l
-        main_files_full = None
+        file_name_list = files_l
+        file_path_list = None
     else:
         if not title_s:
             TITLE = "--prompt=qn > "
@@ -79,14 +79,21 @@ def show_main_fzf(prev_filter=None, files_l=None, title_s=None, help_s=None):
             HELP = '--header=' + help_s
         else:
             HELP = '--header=' + HELP_M
-        main_files,main_files_full = qn.list_files(qn.QNDIR)
+
+        file_repo = qn.file_repo(qn.QNDIR)
+
+        if sortby:
+            file_repo.sort(sortby, sortrev)
+
+        file_name_list = file_repo.filenames()
+        file_path_list = file_repo.filepaths()
 
     fzf_command = fzf_base_command + [TITLE, HELP]
 
     if prev_filter:
         fzf_command += ['--query=' + prev_filter]
 
-    ANS, VAL = call_fzf(fzf_command, main_files)
+    ANS, VAL = call_fzf(fzf_command, file_name_list)
 
     if not ANS:
         sys.exit(0)
@@ -130,7 +137,7 @@ def show_main_fzf(prev_filter=None, files_l=None, title_s=None, help_s=None):
                 print('No search fucntion with alternative qn list')
                 sys.exit(0)
             else:
-                RESULT=show_filtered_fzf(main_files_full, FILTER)
+                RESULT=show_filtered_fzf(file_path_list, FILTER)
                 print("Opening " + RESULT + "...")
                 qn.open_note(RESULT, INTERACTIVE)
         elif key_action == 'opt_seetrash':
@@ -154,7 +161,10 @@ def show_trash_fzf():
 
 
     HELP = 'Press enter to restore file'
-    trash_files, trash_files_full = qn.list_files(qn.QNTRASH)
+    trash_repo = qn.file_repo(qn.QNTRASH)
+    trash_files = trash_repo.filenames()
+
+
     fzf_command = fzf_base_command + ['--header=' + HELP]
     ANS,val = call_fzf(fzf_command, trash_files)
     if ( not ANS ):

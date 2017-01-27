@@ -4,14 +4,18 @@ from subprocess import Popen,PIPE, call
 import pickle
 from datetime import datetime
 import mimetypes
+from stat import ST_CTIME, ST_ATIME, ST_MTIME, ST_SIZE
+from operator import itemgetter
 
 # TO IMPLEMENT
 # * open note's directory in ranger
 
 # User-defined Globals
 QNDIR = os.path.join(os.path.expanduser("~"), "syncthing/smalldocs/quicknotes")
-#QNDIR = os.path.join(os.path.expanduser("~"), "qn_test2")
-#QNDIR = os.path.join(os.path.expanduser("~"), "qn_test3")
+SORTBY='cdate'
+SORTREV=False
+
+
 QNTERMINAL='urxvt'
 QNEDITOR='nvim'
 
@@ -63,6 +67,61 @@ def list_files(path):
             file_l.append(fp_rel)
             file_full_l.append(fp)
     return(file_l, file_full_l)
+
+class file_repo:
+    def __init__(self, dirpath):
+        self.path = dirpath
+        self.file_list = []
+        self.sorttype = "none"
+        self.sortrev = False
+        self.filecount = 0
+
+        self.scan_files()
+
+    def scan_files(self):
+        self.filecount = 0
+        for root, dirs, files in os.walk(self.path, topdown=True):
+            for name in files:
+                fp = os.path.join(root, name)
+                fp_rel = fp[len(self.path)+1:]
+
+                if (fp_rel[0] == '.'):
+                    continue
+
+                try:
+                    stat = os.stat(fp)
+                except:
+                    continue
+
+                file_props = {}
+                file_props['size'] = stat[ST_SIZE]
+                file_props['adate'] = stat[ST_ATIME]
+                file_props['mdate'] = stat[ST_MTIME]
+                file_props['cdate'] = stat[ST_CTIME]
+                file_props['name'] = fp_rel
+                file_props['fullpath'] = fp
+
+                self.file_list.append(file_props)
+                self.filecount += 1
+
+    def sort(self, sortby='name', sortrev=False):
+        if sortby not in ['size', 'adate', 'mdate', 'cdate', 'name']:
+            print("Key '" + sortby + "' is not valid.")
+            print("Choose between size, adate, mdate, cdate or name.")
+
+        self.file_list = sorted(self.file_list, 
+                            key=itemgetter(sortby), reverse=not sortrev)
+        self.sorttype=sortby
+        self.sortrev=sortrev
+
+    def get_property_list(self, prop='name'):
+        return(list(itemgetter('name')(filen) for filen in self.file_list))
+
+    def filenames(self):
+        return(self.get_property_list('name'))
+
+    def filepaths(self):
+        return(self.get_property_list('fullpath'))
 
 
 def move_note(name1, name2, dest1=QNDIR, dest2=QNDIR, move_tags=False):
