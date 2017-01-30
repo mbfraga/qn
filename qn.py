@@ -69,14 +69,12 @@ def list_files(path):
     return(file_l, file_full_l)
 
 class file_repo:
-    def __init__(self, dirpath):
+    def __init__(self, dirpath=None):
         self.path = dirpath
         self.file_list = []
         self.sorttype = "none"
         self.sortrev = False
         self.filecount = 0
-
-        self.scan_files()
 
     def scan_files(self):
         self.filecount = 0
@@ -100,9 +98,34 @@ class file_repo:
                 file_props['cdate'] = stat[ST_CTIME]
                 file_props['name'] = fp_rel
                 file_props['fullpath'] = fp
+                file_props['misc'] = None
 
                 self.file_list.append(file_props)
                 self.filecount += 1
+
+    def add_file(self, filepath, misc_prop=None):
+        if not os.path.isfile(filepath):
+            print(filepath + " is not a file.")
+            return
+
+        fp_rel = filepath[len(self.path)+1:]
+
+        try:
+            stat = os.stat(filepath)
+        except:
+            return
+
+        file_props = {}
+        file_props['size'] = stat[ST_SIZE]
+        file_props['adate'] = stat[ST_ATIME]
+        file_props['mdate'] = stat[ST_MTIME]
+        file_props['cdate'] = stat[ST_CTIME]
+        file_props['name'] = fp_rel
+        file_props['fullpath'] = filepath
+        file_props['misc'] = misc_prop
+
+        self.file_list.append(file_props)
+        self.filecount += 1
 
     def sort(self, sortby='name', sortrev=False):
         if sortby not in ['size', 'adate', 'mdate', 'cdate', 'name']:
@@ -115,13 +138,38 @@ class file_repo:
         self.sortrev=sortrev
 
     def get_property_list(self, prop='name'):
-        return(list(itemgetter('name')(filen) for filen in self.file_list))
+        return(list(itemgetter(prop)(filen) for filen in self.file_list))
 
     def filenames(self):
         return(self.get_property_list('name'))
 
     def filepaths(self):
         return(self.get_property_list('fullpath'))
+
+    def grepfiles(self, filters_string):
+        if not self.file_list:
+            print("No files added to file repo")
+            return(1)
+
+        proc = Popen(['grep', '-i', '-I', filters_string] + self.filepaths() 
+                     , stdout=PIPE)
+        answer = proc.stdout.read().decode('utf-8')
+        exit_code = proc.wait()
+
+        grep_file_repo = file_repo(self.path)
+        temp_files = []
+        if answer == '':
+            return(None)
+
+        for ans in answer.split("\n"):
+            if ans:
+                ans = ans.split(':', 1)
+                if not ans[0] in temp_files:
+                    grep_file_repo.add_file(ans[0], ans[1])
+                    temp_files.append(ans[0])
+
+        return(grep_file_repo)
+
 
 
 def move_note(name1, name2, dest1=QNDIR, dest2=QNDIR, move_tags=False):
@@ -231,12 +279,19 @@ def new_note(note, inter=False):
         note_dir = note.rsplit('/',1)[0]
         if not os.path.isdir(note_dir):
             os.makedirs(os.path.join(QNDIR, note_dir), exist_ok=True)
-
     if inter:
         os.system(QNEDITOR + " " + os.path.join(QNDIR, note))
     else:
         os.system(QNTERMINAL + " -e " + QNEDITOR + " " + os.path.join(QNDIR, note))
+    return(0)
 
+
+def force_new_note(note, inter=False):
+    filepath = os.path.join(QNDIR, note.strip())
+    if os.path.isfile(filepath):
+        open_note(note, inter)
+    else:
+        new_note(note, inter)
     return(0)
 
 
