@@ -25,6 +25,7 @@ QNDATA = os.path.join(QNDIR, '.qn')
 QNTRASH = os.path.join(QNDATA, 'trash')
 TAGF_PATH = os.path.join(QNDATA, 'tags.pickle')
 TERM_INTER = False
+TAGS = True
 
 
 # Check if program exists - linux only
@@ -68,13 +69,28 @@ def list_files(path):
             file_full_l.append(fp)
     return(file_l, file_full_l)
 
-class file_repo:
+
+class FileRepo:
     def __init__(self, dirpath=None):
         self.path = dirpath
         self.file_list = []
         self.sorttype = "none"
         self.sortrev = False
         self.filecount = 0
+
+        self.tags = None
+
+        self.lineformat = ['name', 'cdate']
+        self.linebs = {}
+        self.linebs['name'] = 40
+        self.linebs['adate'] = 18
+        self.linebs['cdate'] = 18
+        self.linebs['mdate'] = 18
+        self.linebs['size'] = 15
+        self.linebs['misc'] = 100
+        self.linebs['tags'] = 50
+
+
 
     def scan_files(self):
         self.filecount = 0
@@ -85,7 +101,6 @@ class file_repo:
 
                 if (fp_rel[0] == '.'):
                     continue
-
                 try:
                     stat = os.stat(fp)
                 except:
@@ -99,9 +114,11 @@ class file_repo:
                 file_props['name'] = fp_rel
                 file_props['fullpath'] = fp
                 file_props['misc'] = None
+                file_props['tags'] = None
 
                 self.file_list.append(file_props)
                 self.filecount += 1
+
 
     def add_file(self, filepath, misc_prop=None):
         if not os.path.isfile(filepath):
@@ -146,6 +163,31 @@ class file_repo:
     def filepaths(self):
         return(self.get_property_list('fullpath'))
 
+    def lines(self, format_list=None):
+        lines = []
+        if not format_list:
+            format_list = self.lineformat
+        for filen in self.file_list:
+            line = ""
+            for formatn in format_list:
+                if formatn in ['adate', 'mdate', 'cdate']:
+                    block = datetime.utcfromtimestamp(filen[formatn])
+                    block = block.strftime('%d/%m/%Y %H:%M')
+                else:
+                    block = str(filen[formatn])
+
+                blocksize = self.linebs[formatn]
+                if len(block) >= blocksize:
+                    block = block[:blocksize-2] + '…'
+
+                block = block.ljust(blocksize)
+                line += block
+
+            lines.append(line)
+
+        return(lines)
+
+
     def grepfiles(self, filters_string):
         if not self.file_list:
             print("No files added to file repo")
@@ -156,7 +198,7 @@ class file_repo:
         answer = proc.stdout.read().decode('utf-8')
         exit_code = proc.wait()
 
-        grep_file_repo = file_repo(self.path)
+        grep_file_repo = FileRepo(self.path)
         temp_files = []
         if answer == '':
             return(None)
@@ -333,23 +375,14 @@ def check_environment(in_rofi=False):
     # Make sure everything is ready for qn
     if not os.path.isdir(QNDIR):
         HELP_MSG = " Do you want to create the qn directory: " + QNDIR + "?"
-        if in_rofi:
-            from qnr import show_yesno_rofi # this doesn't seem like the right approach...but for now it works(tm)
-            if show_yesno_rofi(HELP_MSG):
 
-                print("Creating directory: " + QNDIR + "...")
-                os.makedirs(QNDIR)
-            else:
-                print("qn directory" + QNDIR + " does not exist. Exiting...")
-                sys.exit(1)
+        s = input(HELP_MSG + " (y/N) ")
+        if s and (s[0] == "Y" or s[0] == "y"):
+            print("Creating directory: " + QNDIR + "...")
+            os.makedirs(QNDIR)
         else:
-            s = input(HELP_MSG + " (y/N) ")
-            if s and (s[0] == "Y" or s[0] == "y"):
-                print("Creating directory: " + QNDIR + "...")
-                os.makedirs(QNDIR)
-            else:
-                print("qn directory" + QNDIR + " does not exist. Exiting...")
-                sys.exit(1)
+            print("qn directory" + QNDIR + " does not exist. Exiting...")
+            sys.exit(1)
 
     if not os.path.exists(QNDATA):
         print("Creating directory: " + QNDATA + "...")
