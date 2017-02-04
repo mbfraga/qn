@@ -2,7 +2,6 @@ import os
 import sys
 from subprocess import Popen, PIPE, call
 import struct
-
 import qn
 
 INTERACTIVE=True
@@ -38,7 +37,6 @@ def call_fzf(fzf_command, entries, additional_args=[]):
                             '--print-query',
                             '--print0'
                             ])
-
 
     proc=Popen(fzf_command + additional_args, stdin=PIPE, stdout=PIPE)
     for e in entries:

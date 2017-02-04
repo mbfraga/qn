@@ -15,10 +15,8 @@ QNDIR = os.path.join(os.path.expanduser("~"), "syncthing/smalldocs/quicknotes")
 SORTBY='cdate'
 SORTREV=False
 
-
 QNTERMINAL='urxvt'
 QNEDITOR='nvim'
-
 
 # Globals
 QNDATA = os.path.join(QNDIR, '.qn')
@@ -26,6 +24,133 @@ QNTRASH = os.path.join(QNDATA, 'trash')
 TAGF_PATH = os.path.join(QNDATA, 'tags.pickle')
 TERM_INTER = False
 TAGS = True
+
+DEFAULT_OPTIONS = {}
+DEFAULT_OPTIONS['title'] = 'qn:'
+DEFAULT_OPTIONS['help'] = None
+DEFAULT_OPTIONS['position'] = None
+DEFAULT_OPTIONS['filter'] = None
+DEFAULT_OPTIONS['sortby'] = SORTBY
+DEFAULT_OPTIONS['sortrev'] = SORTREV
+
+BASE_COMMAND ={}
+BASE_COMMAND['rofi'] = ['rofi', '-dmenu', '-i', '-width', '50', '-lines', '15'
+                        , '-kb-custom-1', 'Alt+Shift+1'
+                        , '-kb-custom-1', 'Alt+Shift+1' #remove previous bindings
+                        , '-kb-custom-2', 'Alt+Shift+2' #remove previous bindings
+                        , '-kb-custom-3', 'Alt+Shift+3' #remove previous bindings
+                        , '-kb-custom-4', 'Alt+Shift+4' #remove previous bindings
+                        ]
+
+BASE_COMMAND['fzf'] = ['fzf']
+
+IMPLEMENTED_APPS = ['rofi', 'fzf']
+
+def generate_options(appname):
+
+
+    qn_options = {}
+    qn_options['title'] = 'qn:'
+    qn_options['help'] = None
+    qn_options['position'] = None
+    qn_options['filter'] = None
+    qn_options['sortby'] = SORTBY
+    qn_options['sortrev'] = SORTREV
+
+
+    if appname not in IMPLEMENTED_APPS:
+        raise ValueError('App "%r" not implemented.' % (appname))
+    if appname == 'rofi':
+        qn_options['app'] = 'rofi'
+        qn_options['interactive'] = False 
+        qn_options['help'] = ''
+        qn_options['command'] = ['rofi', '-sep', '\\0', '-columns', '1'
+                        , '-dmenu', '-i', '-width', '50', '-lines', '15'
+                        , '-kb-custom-1', 'Alt+Shift+1'
+                        , '-kb-custom-1', 'Alt+Shift+1' #remove previous bindings
+                        , '-kb-custom-2', 'Alt+Shift+2' #remove previous bindings
+                        , '-kb-custom-3', 'Alt+Shift+3' #remove previous bindings
+                        , '-kb-custom-4', 'Alt+Shift+4' #remove previous bindings
+                        ]
+        qn_options['hotkeys'] = {
+                    'forcenew'  :['forcenew'  ,'Alt+Return' , 'Force Create New Note'],
+                    'delete'    :['delete'    ,'Alt+r'      , 'Delete Note'],
+                    'rename'    :['rename'    ,'Alt+space'  , 'Rename Note'],
+                    'addtag'    :['addtag'    ,'Alt+n'      , 'Add Tag to Note'],
+                    'grep'      :['grep'      ,'Alt+s'      , 'Grep Notes'],
+                    'showtrash' :['showtrash' ,'Alt+t'      , 'Show Trash'],
+                    'showtagb'  :['showtagb'  ,'Alt+i'      , 'Show Note Tags'],
+                    'showtagm'  :['showtagm'  ,'Alt+u'      , 'Filter By Tags'],
+                    'showhelp'  :['showhelp'  ,'Alt+h'      , 'Show Help'],
+                    'sortname'  :['sortname'  ,'Alt+1'      , 'Sort By Name'],
+                    'sortcdate' :['sortcdate' ,'Alt+2'      , 'Sort by Creation Date'],
+                    'sortmdate' :['sortmdate' ,'Alt+3'      , 'Sort by Modificatin Date'],
+                    'sortsize'  :['sortsize'  ,'Alt+4'      , 'Sort by Size']
+                    }
+
+
+
+    elif appname == 'fzf':
+        qn_options['app'] = 'fzf'
+        qn_options['interactive'] = True 
+        qn_options['help'] = ''
+        qn_options['title'] = 'qn > '
+        qn_options['command'] = ['fzf'
+                   ,'--read0'
+                   ,'--print-query'
+                   ,'--print0'
+                   ,'--exact'
+                   ,'--expect', 'alt-t'
+                    ]
+        qn_options['hotkeys'] = {
+                    'forcenew'  :['forcenew'  ,'alt-return' , 'Force Create New Note'],
+                    'delete'    :['delete'    ,'alt-r'      , 'Delete Note'],
+                    'rename'    :['rename'    ,'alt-space'  , 'Rename Note'],
+                    'addtag'    :['addtag'    ,'alt-n'      , 'Add Tag to Note'],
+                    'grep'      :['grep'      ,'alt-g'      , 'Grep Notes'],
+                    'showtrash' :['showtrash' ,'alt-t'      , 'Show Trash'],
+                    'showtagb'  :['showtagb'  ,'alt-j'      , 'Show Note Tags'],
+                    'showtagm'  :['showtagm'  ,'alt-k'      , 'Filter By Tags'],
+                    'showhelp'  :['showhelp'  ,'alt-h'      , 'Show Help'],
+                    'sortname'  :['sortname'  ,'alt-1'      , 'Sort By Name'],
+                    'sortcdate' :['sortcdate' ,'alt-2'      , 'Sort by Creation Date'],
+                    'sortmdate' :['sortmdate' ,'alt-3'      , 'Sort by Modificatin Date'],
+                    'sortsize'  :['sortsize'  ,'alt-4'      , 'Sort by Size']
+                    }
+    return(qn_options)
+
+
+def gen_instance_args(qn_options, instance, alt_help=None, alt_title=None):
+
+
+    if alt_help:
+        helpn = alt_help
+    else:
+        helpn = qn_options['help']
+    if alt_title:
+        titlen = alt_title
+    else:
+        titlen = qn_options['title']
+
+    appname = qn_options['app']
+    arguments = []
+    if instance == 'default':
+        if appname == 'rofi':
+            arguments.extend(['-mesg', helpn
+                             , '-format', 'f;s;i'
+                             ,'-p', titlen])
+            if qn_options['filter']:
+                arguments.extend(['-filter', qn_options['filter']])
+            if qn_options['position']:
+                arguments.extend(['-selected-row', qn_options['position']])
+
+        elif appname == 'fzf':
+            arguments.extend(['--header', helpn
+                             ,'--prompt', titlen])
+            if qn_options['filter']:
+                arguments.extend(['-filter', qn_options['filter']])
+
+    return(arguments)
 
 
 # Check if program exists - linux only

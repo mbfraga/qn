@@ -7,22 +7,23 @@ import qn
 import time
 
 
-opt_forcenew  = ('forcenew', 'Alt+Return', 'Force Create New Note')
-opt_delete    = ('delete', 'Alt+r', 'Delete Note')
-opt_rename    = ('rename', 'Alt+space', 'Rename Note')
-opt_addtag    = ('addtag', 'Alt+n', 'Add Tag to Note')
-opt_grep      = ('grep', 'Alt+s', 'Grep Notes')
-opt_showtrash = ('showtrash', 'Alt+t', 'Show Trash')
-opt_showtagb  = ('showtagb', 'Alt+i', 'Show Note Tags')
-opt_showtagm  = ('showtagm', 'Alt+u', 'Filter By Tags')
-opt_showhelp  = ('showhelp', 'Alt+h', 'Show Help')
-opt_sortname  = ('sortname', 'Alt+1', 'Sort By Name')
-opt_sortcdate = ('sortcdate', 'Alt+2', 'Sort by Creation Date')
-opt_sortmdate = ('sortmdate', 'Alt+3', 'Sort by Modificatin Date')
-opt_sortsize  = ('sortsize', 'Alt+4', 'Sort by Size')
-
-COLS = 1
 INTERACTIVE = False
+COLS = 1
+
+opt_forcenew  = ('forcenew'  , 'Alt+Return' , 'Force Create New Note')
+opt_delete    = ('delete'    , 'Alt+r'      , 'Delete Note')
+opt_rename    = ('rename'    , 'Alt+space'  , 'Rename Note')
+opt_addtag    = ('addtag'    , 'Alt+n'      , 'Add Tag to Note')
+opt_grep      = ('grep'      , 'Alt+s'      , 'Grep Notes')
+opt_showtrash = ('showtrash' , 'Alt+t'      , 'Show Trash')
+opt_showtagb  = ('showtagb'  , 'Alt+i'      , 'Show Note Tags')
+opt_showtagm  = ('showtagm'  , 'Alt+u'      , 'Filter By Tags')
+opt_showhelp  = ('showhelp'  , 'Alt+h'      , 'Show Help')
+opt_sortname  = ('sortname'  , 'Alt+1'      , 'Sort By Name')
+opt_sortcdate = ('sortcdate' , 'Alt+2'      , 'Sort by Creation Date')
+opt_sortmdate = ('sortmdate' , 'Alt+3'      , 'Sort by Modificatin Date')
+opt_sortsize  = ('sortsize'  , 'Alt+4'      , 'Sort by Size')
+
 
 rofi_base_command = ['rofi', '-dmenu', '-i', '-width', '50', '-lines', '15'
                      , '-kb-custom-1', 'Alt+Shift+1'
@@ -33,7 +34,10 @@ rofi_base_command = ['rofi', '-dmenu', '-i', '-width', '50', '-lines', '15'
                      ]
 
 default_help_string = 'Press "' + opt_showhelp[1] + '" to see a list of hotkeys.'
+
 default_qn_options = {}
+default_qn_options['app'] = None 
+default_qn_options['interactive'] = False
 default_qn_options['title'] = 'qn:'
 default_qn_options['help'] = default_help_string
 default_qn_options['position'] = None
@@ -101,8 +105,9 @@ def call_rofi(rofi_command, entries, additional_args=[]):
 def show_default_rofi(qn_options):
 
 
-    print(qn_options)
+    print(qn_options) #debug
     timea = time.time() #debug
+
     default_hotkeys = RofiHotkeys()
     default_hotkeys.add_key(*opt_delete)
     default_hotkeys.add_key(*opt_showtrash)
@@ -119,12 +124,10 @@ def show_default_rofi(qn_options):
     default_hotkeys.add_key(*opt_sortsize)
     hotkey_args = default_hotkeys.generate_hotkey_args()
 
-
     file_repo = qn.FileRepo(qn.QNDIR)
     file_repo.scan_files()
     file_repo.sort(qn_options['sortby'], qn_options['sortrev'])
     file_name_list = file_repo.lines()
-    #file_name_list = file_repo.filenames()
 
     MESG = qn_options['help'] + ' Sorted by: ' + qn_options['sortby']
     if qn_options['sortrev']:
@@ -329,6 +332,7 @@ def show_filtered_rofi(filerepo, FILTER, qn_options):
 
 
     HELP = "List of notes filtered for '" + FILTER + "'."
+    HELP += " Press '" + opt_grep[1] + "' to go back to qn."
     rofi_command = rofi_base_command + [ 'qn search:', '-mesg', HELP
                                         , '-format', 'i', '-p', 'qn grep:']
 
