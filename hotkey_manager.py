@@ -41,6 +41,12 @@ class HotkeyManager:
                 if val == key['keybinding']:
                     return(key['optname'])
 
+    def get_keybinding(self, optname):
+        for key in self.keys:
+            if key['optname'] == optname:
+                return key['keybinding']
+        return(None)
+
     def generate_hotkey_args(self):
         hotkey_args = []
         if self.app == 'rofi':

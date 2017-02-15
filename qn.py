@@ -94,7 +94,7 @@ def generate_options(appname):
         qn_options['app'] = 'fzf'
         qn_options['interactive'] = True 
         qn_options['help'] = ''
-        qn_options['title'] = 'qn > '
+        qn_options['title'] = 'qn: '
         qn_options['command'] = ['fzf'
                    ,'--read0'
                    ,'--print-query'
