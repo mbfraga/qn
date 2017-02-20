@@ -22,16 +22,7 @@ QNEDITOR='nvim'
 QNDATA = os.path.join(QNDIR, '.qn')
 QNTRASH = os.path.join(QNDATA, 'trash')
 TAGF_PATH = os.path.join(QNDATA, 'tags.pickle')
-TERM_INTER = False
-TAGS = True
 
-DEFAULT_OPTIONS = {}
-DEFAULT_OPTIONS['title'] = 'qn:'
-DEFAULT_OPTIONS['help'] = None
-DEFAULT_OPTIONS['position'] = None
-DEFAULT_OPTIONS['filter'] = None
-DEFAULT_OPTIONS['sortby'] = SORTBY
-DEFAULT_OPTIONS['sortrev'] = SORTREV
 
 BASE_COMMAND ={}
 BASE_COMMAND['rofi'] = ['rofi', '-dmenu', '-i', '-width', '50', '-lines', '15'
@@ -177,24 +168,6 @@ def file_mime_type(filename):
     return(mtype)
 
 
-# Right now it includes hidden files - this needs to be fixed
-def list_files(path):
-
-
-    file_l = [] 
-    file_full_l = []
-    for root, dirs, files in os.walk(path, topdown=True):
-        for name in files:
-            fp = os.path.join(root, name)
-            fp_rel = os.path.relpath(fp, path)
-            # Ignore dotfiles
-            if (fp_rel[0] == '.'):
-                continue
-            file_l.append(fp_rel)
-            file_full_l.append(fp)
-    return(file_l, file_full_l)
-
-
 class FileRepo:
     def __init__(self, dirpath=None):
         self.path = dirpath
@@ -313,7 +286,7 @@ class FileRepo:
         return(lines)
 
 
-    def grepfiles(self, filters_string):
+    def grep_files(self, filters_string):
         if not self.file_list:
             print("No files added to file repo")
             return(1)
@@ -461,37 +434,6 @@ def force_new_note(note, inter=False):
         new_note(note, inter)
     return(0)
 
-
-def find_in_notes(file_list, f_string):
-
-
-    grep_path = os.path.join(QNDIR, '*')
-    filt = f_string.strip().split(" ") 
-    filtered_list = file_list
-    for f in filt:
-        keyword =  f 
-        proc = Popen(['grep', '-i', '-I',  keyword] + filtered_list, stdout=PIPE)
-        answer = proc.stdout.read().decode('utf-8')
-        exit_code = proc.wait()
-        if answer == '':
-            return(None, None, None)
-
-        filtered_list = []
-        filtered_content = []
-        raw_lines = []
-        
-        for ans in answer.split('\n'):
-            if ans.strip() == '':
-                continue
-            raw_lines.append(ans)
-            note_name, note_content = ans.split(':', 1)
-            if note_name in filtered_list:
-                continue
-            else:
-                filtered_list.append(note_name)
-                filtered_content.append(note_content)
-    # this return is a bit messy, but for now it affords current functionality.
-    return(raw_lines, filtered_list, filtered_content)
 
 
 def check_environment(in_rofi=False):

@@ -343,7 +343,7 @@ def show_filtered(qn_options, file_repo, FILTER):
     if not FILTER:
         show_default(qn_options)
     for f in filters:
-        filtered_repo = file_repo.grepfiles(f)
+        filtered_repo = file_repo.grep_files(f)
 
     filtered_repo.lineformat = ['name', 'misc']
 
