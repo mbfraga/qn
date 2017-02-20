@@ -66,6 +66,25 @@ class HotkeyManager:
             hotkey_args.append(keys_string)
             return(hotkey_args)
 
+    def generate_help(self, enter_help=None):
+        help_padding = 35
+        help_lines = []
+        if enter_help:
+            line = enter_help + ":"
+            line = line.ljust(help_padding)
+            line += 'Enter'
+            help_lines.append(line)
+        for key in self.keys:
+            line = ""
+            line += key['keyhelp'] + ":"
+            line = line.ljust(help_padding)
+            line +=  key['keybinding']
+            help_lines.append(line)
+
+        return(help_lines)
+            
+
+
 
 hk = HotkeyManager('rofi')
 

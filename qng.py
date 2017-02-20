@@ -191,8 +191,8 @@ def show_default(qn_options):
 #        print('Browse Tags')
 #    elif OPTSEL == 'showtagm':
 #        print('Show Note Tags')
-#    elif OPTSEL == 'showhelp':
-#        show_help_rofi(default_hotkeys, qn_options, 'Open Note')
+    elif OPTSEL == 'showhelp':
+        show_help(qn_options, hkman, enter_help="Create/Edit note")
     if OPTSEL == 'sortname':
         show_sorted_default(qn_options, 'name', True)
     elif OPTSEL == 'sortcdate':
@@ -374,6 +374,33 @@ def show_filtered(qn_options, file_repo, FILTER):
 
 
     if OPTSEL == 'grep':
+        show_default(qn_options)
+
+
+def show_help(qn_options, hotkey_manager, enter_help):
+
+
+    hkman = hk.HotkeyManager(qn_options['app'])
+    hkman.add_key(*qn_options['hotkeys']['showhelp'])
+    hotkey_args = hkman.generate_hotkey_args()
+
+
+    MESG = "List of options and corresponding keybindings."
+    MESG += " Press '" + hkman.get_keybinding('showhelp') + "' to go back to qn."
+    TITLE = 'qn help: '
+
+    extra_args = qn.gen_instance_args(qn_options, 'default'
+                                    , alt_help=MESG, alt_title=TITLE)
+    extra_args.extend(hotkey_args)
+
+
+    help_lines = hotkey_manager.generate_help(enter_help)
+
+    ANSWER = call_command(qn_options, help_lines, extra_args)
+
+    if not ANSWER:
+        return(0)
+    else:
         show_default(qn_options)
 
 
