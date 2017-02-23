@@ -16,7 +16,7 @@ SORTBY='cdate'
 SORTREV=False
 
 QNTERMINAL='urxvt'
-QNEDITOR='nvim'
+QNEDITOR='vim'
 
 # Globals
 QNDATA = os.path.join(QNDIR, '.qn')
