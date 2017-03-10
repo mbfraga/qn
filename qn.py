@@ -65,18 +65,18 @@ def generate_options(appname):
                         ]
         qn_options['hotkeys'] = {
                     'forcenew'  :['forcenew'  ,'Alt+Return' , 'Force Create New Note'],
-                    'delete'    :['delete'    ,'Alt+r'      , 'Delete Note'],
                     'rename'    :['rename'    ,'Alt+space'  , 'Rename Note'],
-                    'addtag'    :['addtag'    ,'Alt+n'      , 'Add Tag to Note'],
-                    'grep'      :['grep'      ,'Alt+s'      , 'Grep Notes'],
+                    'delete'    :['delete'    ,'Alt+r'      , 'Delete Note'],
+                    'grep'      :['grep'      ,'Alt+g'      , 'Grep Notes'],
                     'showtrash' :['showtrash' ,'Alt+t'      , 'Show Trash'],
-                    'showtagb'  :['showtagb'  ,'Alt+i'      , 'Show Note Tags'],
-                    'showtagm'  :['showtagm'  ,'Alt+u'      , 'Filter By Tags'],
                     'showhelp'  :['showhelp'  ,'Alt+h'      , 'Show Help'],
-                    'sortname'  :['sortname'  ,'Alt+1'      , 'Sort By Name'],
                     'sortcdate' :['sortcdate' ,'Alt+2'      , 'Sort by Creation Date'],
+                    'sortname'  :['sortname'  ,'Alt+1'      , 'Sort By Name'],
                     'sortmdate' :['sortmdate' ,'Alt+3'      , 'Sort by Modificatin Date'],
-                    'sortsize'  :['sortsize'  ,'Alt+4'      , 'Sort by Size']
+                    'sortsize'  :['sortsize'  ,'Alt+4'      , 'Sort by Size'],
+                    'addtag'    :['addtag'    ,'Alt+n'      , 'Add Tag to Note (Not Implemented)'],
+                    'showtagb'  :['showtagb'  ,'Alt+i'      , 'Show Note Tags (Not Implemented)'],
+                    'showtagm'  :['showtagm'  ,'Alt+u'      , 'Filter By Tags (Not Implemented)']
                     }
 
 
@@ -97,11 +97,11 @@ def generate_options(appname):
                     'forcenew'  :['forcenew'  ,'alt-return' , 'Force Create New Note'],
                     'delete'    :['delete'    ,'alt-r'      , 'Delete Note'],
                     'rename'    :['rename'    ,'alt-space'  , 'Rename Note'],
-                    'addtag'    :['addtag'    ,'alt-n'      , 'Add Tag to Note'],
+                    'addtag'    :['addtag'    ,'alt-n'      , 'Add Tag to Note (Not Implemented)'],
                     'grep'      :['grep'      ,'alt-g'      , 'Grep Notes'],
                     'showtrash' :['showtrash' ,'alt-t'      , 'Show Trash'],
-                    'showtagb'  :['showtagb'  ,'alt-j'      , 'Show Note Tags'],
-                    'showtagm'  :['showtagm'  ,'alt-k'      , 'Filter By Tags'],
+                    'showtagb'  :['showtagb'  ,'alt-j'      , 'Show Note Tags (Not Implemented)'],
+                    'showtagm'  :['showtagm'  ,'alt-k'      , 'Filter By Tags (Not Implemented)'],
                     'showhelp'  :['showhelp'  ,'alt-h'      , 'Show Help'],
                     'sortname'  :['sortname'  ,'alt-1'      , 'Sort By Name'],
                     'sortcdate' :['sortcdate' ,'alt-2'      , 'Sort by Creation Date'],
