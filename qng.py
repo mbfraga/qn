@@ -398,6 +398,8 @@ def show_help(qn_options, hotkey_manager, enter_help):
 
     ANSWER = call_command(qn_options, help_lines, extra_args)
 
+    print(ANSWER)
+
     if not ANSWER:
         return(0)
     else:
