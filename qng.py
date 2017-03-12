@@ -374,7 +374,10 @@ def show_filtered(qn_options, file_repo, FILTER):
 
 
     if OPTSEL == 'grep':
-        show_default(qn_options)
+        if not FILTER:
+            show_default(qn_options)
+        else:
+            show_filtered(qn_options, file_repo, FILTER)
 
 
 def show_help(qn_options, hotkey_manager, enter_help):
@@ -398,10 +401,11 @@ def show_help(qn_options, hotkey_manager, enter_help):
 
     ANSWER = call_command(qn_options, help_lines, extra_args)
 
-    print(ANSWER)
 
     if not ANSWER:
         return(0)
+    if not ANSWER[0]:
+        sys.exit(0)
     else:
         show_default(qn_options)
 
