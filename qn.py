@@ -1,5 +1,6 @@
 import os
 import sys
+import argparse
 from subprocess import Popen,PIPE, call
 import pickle
 from datetime import datetime
@@ -588,9 +589,36 @@ def list_notes_with_tags(tagname, tagsdict=None):
  
 
 if __name__ == '__main__':
-    check_environment()
-    files, files_f = list_files(QNDIR)
-    for note in files:
-        print(note)
 
-    print("\nNumber of files: " + str(len(files)) + ".")
+    parser = argparse.ArgumentParser(prog='qn', 
+                        description="Quick Note Manager.")
+    parser.add_argument('-l', '--list-notes', action='store_true', default=False
+                , help='list notes in note directory')
+    parser.add_argument('-s', '--search', nargs='*', default=-1
+                , help='search for note')
+    parser.add_argument('-o', '--open-note', action='store_true', default=False
+                , help='open')
+
+    args = parser.parse_args()
+    #print(args)
+
+    check_environment()
+    filerepo = FileRepo(QNDIR)
+    filerepo.scan_files()
+    if args.list_files:
+        for filen in filerepo.filenames():
+            print(filen)
+        sys.exit(0)
+    if args.search != -1:
+        search_list = filerepo.filenames()
+        for filen in filerepo.filenames():
+            bool_list = []
+            for search_string in args.search:
+                bool_list.append(search_string in filen)
+            if all(bool_list):
+                print(filen)
+
+        sys.exit(0)
+
+
+
