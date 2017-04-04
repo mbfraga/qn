@@ -1,0 +1,5 @@
+qndir="~/syncthing/smalldocs/quicknotes"
+sortby="cdate"
+sortrev=False
+qnterminal="urxvt"
+qneditor="vim"

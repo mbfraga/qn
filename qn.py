@@ -7,6 +7,8 @@ from datetime import datetime
 import mimetypes
 from stat import ST_CTIME, ST_ATIME, ST_MTIME, ST_SIZE
 from operator import itemgetter
+import configargparse
+
 
 # TO IMPLEMENT
 # * open note's directory in ranger
@@ -15,50 +17,41 @@ from operator import itemgetter
 QNDIR = os.path.join(os.path.expanduser("~"), "syncthing/smalldocs/quicknotes")
 SORTBY='cdate'
 SORTREV=False
-
 QNTERMINAL='urxvt'
 QNEDITOR='vim'
 
 # Globals
-QNDATA = os.path.join(QNDIR, '.qn')
-QNTRASH = os.path.join(QNDATA, 'trash')
-TAGF_PATH = os.path.join(QNDATA, 'tags.pickle')
+_QNDATA = os.path.join(QNDIR, '.qn')
+_QNTRASH = os.path.join(_QNDATA, 'trash')
+_TAGF_PATH = os.path.join(_QNDATA, 'tags.pickle')
+_FALLBACK_TERMINAL = 'xterm'
+_FALLBACK_EDITOR = 'vi'
 
+_IMPLEMENTED_APPS = ('rofi', 'fzf')
+_SORT_OPTS = ('cdate', 'mdate', 'name', 'size')
 
-BASE_COMMAND ={}
-BASE_COMMAND['rofi'] = ['rofi', '-dmenu', '-i', '-width', '50', '-lines', '15'
-                        , '-kb-custom-1', 'Alt+Shift+1'
-                        , '-kb-custom-1', 'Alt+Shift+1' #remove previous bindings
-                        , '-kb-custom-2', 'Alt+Shift+2' #remove previous bindings
-                        , '-kb-custom-3', 'Alt+Shift+3' #remove previous bindings
-                        , '-kb-custom-4', 'Alt+Shift+4' #remove previous bindings
-                        ]
-
-BASE_COMMAND['fzf'] = ['fzf']
-
-IMPLEMENTED_APPS = ['rofi', 'fzf']
-
-def generate_options(appname):
+def gen_default_options(appname):
 
 
     qn_options = {}
     qn_options['title'] = 'qn:'
+    qn_options['qndir'] = None
+    qn_options['terminal'] = None
+    qn_options['editor'] = None
     qn_options['help'] = None
     qn_options['position'] = None
     qn_options['filter'] = None
     qn_options['sortby'] = SORTBY
     qn_options['sortrev'] = SORTREV
 
-
-    if appname not in IMPLEMENTED_APPS:
+    if appname not in _IMPLEMENTED_APPS:
         raise ValueError('App "%r" not implemented.' % (appname))
     if appname == 'rofi':
         qn_options['app'] = 'rofi'
         qn_options['interactive'] = False 
         qn_options['help'] = ''
         qn_options['command'] = ['rofi', '-sep', '\\0', '-columns', '1'
-                        , '-dmenu', '-i', '-width', '50', '-lines', '15'
-                        , '-kb-custom-1', 'Alt+Shift+1'
+                        , '-dmenu', '-i'
                         , '-kb-custom-1', 'Alt+Shift+1' #remove previous bindings
                         , '-kb-custom-2', 'Alt+Shift+2' #remove previous bindings
                         , '-kb-custom-3', 'Alt+Shift+3' #remove previous bindings
@@ -79,7 +72,6 @@ def generate_options(appname):
                     'showtagb'  :['showtagb'  ,'Alt+i'      , 'Show Note Tags (Not Implemented)'],
                     'showtagm'  :['showtagm'  ,'Alt+u'      , 'Filter By Tags (Not Implemented)']
                     }
-
 
 
     elif appname == 'fzf':
@@ -143,6 +135,84 @@ def gen_instance_args(qn_options, instance, alt_help=None, alt_title=None):
                 arguments.extend(['-filter', qn_options['filter']])
 
     return(arguments)
+
+
+def parse_config(): 
+
+
+    default_config_path = '~/.config/qn/config'
+    default_config_path_expanded = default_config_path
+    config_used=None
+
+    p = configargparse.ArgParser(default_config_files=[default_config_path])
+    p.add('-c', '--config', is_config_file=True
+            , help='config file path')
+    p.add('-d', '--qndir', default='~/qn/', help='qn directory path')
+    p.add('--terminal', default='xterm', help='default terminal to use')
+    p.add('--text-editor', default='vim', help='default text editor to use')
+    p.add('--default-interface', default='rofi'
+            , help='default interface (rofi/fzf) to use')
+    p.add('-r', default=False, action='store_true', help='run as rofi')
+    p.add('-f', default=False, action='store_true', help='run as fzf')
+    p.add('--sortby', default='cdate'
+            , help='type of default sorting (cdate, mdate, name, size)')
+    p.add('--sortrev', default=False, help='reverse sorting (True/False)')
+    p.add('--rofi-settings', default=False
+            , help="rofi settings to append. Format as: '-width 1 -lines 15'"
+                + ", surround by '( )' if using command line argument"
+                + ". In config, exclude quotes.")
+    p.add('--fzf-settings', default=False
+            , help="rofi settings to append. Format as: '--height=100; --border'"
+                + ", surround by '( )' if using command line argument"
+                + ". In config, exclude quotes.")
+    # Need to improve formatting on this...but not sure how
+    p.add('--rofi-keybindings', default=False, help="define keybindings. Format as:"
+                + " command=keybinding; e.g., forcenew=Alt+Return;rename=Alt+space."
+                + " Possible commands: forcenew,rename,delete,grep,showtrash"
+                + " ,showhelp,sortcdate,sortname,sortmdate,sortsize")
+    p.add('--fzf-keybindings', default=False, help="define keybindings. Format as:"
+                + " command=keybinding; e.g., forcenew=alt-Return;rename=alt+space."
+                + " Possible commands: forcenew,rename,delete,grep,showtrash"
+                + " ,showhelp,sortcdate,sortname,sortmdate,sortsize")
+
+    options = p.parse_args()
+
+    if not os.path.isfile(default_config_path_expanded):
+        if not options.config:
+            print("Default config file not found at " 
+                    + default_config_path_expanded + ", and no config file"
+                    + " defined via -c. Using default values.\n")
+            config_used = 'defaults'
+        else:
+            config_used = options.config
+    else:
+        config_used = default_config_path_expanded
+
+    # Check interface selected and that it is implemented
+    if options.default_interface not in _IMPLEMENTED_APPS:
+        print("ERROR with config '" + config_used + "': default interface, " 
+              + options.default_interface + " not implemented.")
+        sys.exit(1)
+
+    # Check if command used for terminal and text editors exist
+    if not cmd_exists(options.terminal):
+        print("WARNING with config '" + config_used + "': terminal app, "
+                + options.terminal + " is not installed. Using default.")
+        options.terminal = _FALLBACK_TERMINAL
+
+    if not cmd_exists(options.text_editor):
+        print("WARNING with config '" + config_used + "': text editor app, "
+                + options.text_editor + " is not installed. Using default.")
+        options.text_editor = _FALLBACK_EDITOR
+
+    if options.sortby not in _SORT_OPTS:
+        print("WARNING with config '" + config_used + "': sorty option, "
+                + options.sortby + " is not valid. Using cdate")
+        options.sortby = 'cdate'
+
+
+    return(options)
+
 
 
 # Check if program exists - linux only
@@ -380,13 +450,13 @@ def move_note(name1, name2, dest1=QNDIR, dest2=QNDIR, move_tags=False):
 def delete_note(note):
 
 
-    move_note(note, note, dest1=QNDIR, dest2=QNTRASH)
+    move_note(note, note, dest1=QNDIR, dest2=_QNTRASH)
 
 
 def undelete_note(note):
 
 
-    move_note(note, note, dest1=QNTRASH, dest2=QNDIR)
+    move_note(note, note, dest1=_QNTRASH, dest2=QNDIR)
 
 
 def open_note(note, inter=False):
@@ -437,8 +507,39 @@ def force_new_note(note, inter=False):
 
 
 
-def check_environment(in_rofi=False):
+def check_environment():
 
+    conf_options = parse_config()
+    if conf_options.r:
+        app='rofi'
+    elif conf_options.f:
+        app='fzf'
+    else:
+        app=conf_options.default_interface
+
+    print(conf_options)
+    qn_options = gen_default_options(app)
+    qn_options['qndir'] = os.path.expanduser(conf_options.qndir)
+    qn_options['terminal'] = conf_options.terminal
+    qn_options['editor'] = conf_options.text_editor
+    qn_options['sortby'] = conf_options.sortby
+    qn_options['sortrev'] = conf_options.sortrev
+    command_extra = False
+    rofi_extra_settings = conf_options.rofi_settings
+    if rofi_extra_settings and app == 'rofi':
+        if rofi_extra_settings[0] == "(":
+            command_extra = rofi_extra_settings[1:-1]
+        else:
+            command_extra = rofi_extra_settings
+    fzf_extra_settings = conf_options.fzf_settings
+    if fzf_extra_settings and app == 'fzf':
+        if fzf_extra_settings[0] == "(":
+            command_extra = fzf_extra_settings[1:-1]
+        else:
+            command_extra = fzf_extra_settings
+
+    if command_extra:
+        qn_options['command'].extend(command_extra.split())
 
     # Make sure everything is ready for qn
     if not os.path.isdir(QNDIR):
@@ -452,23 +553,25 @@ def check_environment(in_rofi=False):
             print("qn directory" + QNDIR + " does not exist. Exiting...")
             sys.exit(1)
 
-    if not os.path.exists(QNDATA):
-        print("Creating directory: " + QNDATA + "...")
-        os.makedirs(QNDATA, exist_ok=True)
-    if not os.path.exists(QNTRASH):
-        print("Creating directory: " + QNTRASH + "...")
-        os.makedirs(QNTRASH, exist_ok=True)
-    if not os.path.isfile(TAGF_PATH):
-        tagfile = open(TAGF_PATH, 'wb')
+    if not os.path.exists(_QNDATA):
+        print("Creating directory: " + _QNDATA + "...")
+        os.makedirs(_QNDATA, exist_ok=True)
+    if not os.path.exists(_QNTRASH):
+        print("Creating directory: " + _QNTRASH + "...")
+        os.makedirs(_QNTRASH, exist_ok=True)
+    if not os.path.isfile(_TAGF_PATH):
+        tagfile = open(_TAGF_PATH, 'wb')
         pickle.dump({'__taglist':[]}, tagfile)
         tagfile.close()
+
+    return(qn_options)
 
 
 # FOR TAG SUPPORT
 def load_tags():
 
 
-    tagfile = open(TAGF_PATH, 'rb')
+    tagfile = open(_TAGF_PATH, 'rb')
     tagdict = pickle.load(tagfile)
     tagfile.close()
 
@@ -478,7 +581,7 @@ def load_tags():
 def save_tags(newdict):
 
 
-    tagfile = open(TAGF_PATH, 'wb')
+    tagfile = open(_TAGF_PATH, 'wb')
     pickle.dump(newdict, tagfile)
     tagfile.close()
 
@@ -589,36 +692,41 @@ def list_notes_with_tags(tagname, tagsdict=None):
  
 
 if __name__ == '__main__':
+    qn_options = check_environment()
+    print("---------")
 
-    parser = argparse.ArgumentParser(prog='qn', 
-                        description="Quick Note Manager.")
-    parser.add_argument('-l', '--list-notes', action='store_true', default=False
-                , help='list notes in note directory')
-    parser.add_argument('-s', '--search', nargs='*', default=-1
-                , help='search for note')
-    parser.add_argument('-o', '--open-note', action='store_true', default=False
-                , help='open')
+    for key,value in qn_options.items():
+        print(key, "|", value)
 
-    args = parser.parse_args()
-    #print(args)
-
-    check_environment()
-    filerepo = FileRepo(QNDIR)
-    filerepo.scan_files()
-    if args.list_files:
-        for filen in filerepo.filenames():
-            print(filen)
-        sys.exit(0)
-    if args.search != -1:
-        search_list = filerepo.filenames()
-        for filen in filerepo.filenames():
-            bool_list = []
-            for search_string in args.search:
-                bool_list.append(search_string in filen)
-            if all(bool_list):
-                print(filen)
-
-        sys.exit(0)
+#    parser = argparse.ArgumentParser(prog='qn', 
+#                        description="Quick Note Manager.")
+#    parser.add_argument('-l', '--list-notes', action='store_true', default=False
+#                , help='list notes in note directory')
+#    parser.add_argument('-s', '--search', nargs='*', default=-1
+#                , help='search for note')
+#    parser.add_argument('-o', '--open-note', action='store_true', default=False
+#                , help='open')
+#
+#    args = parser.parse_args()
+#    #print(args)
+#
+#    check_environment()
+#    filerepo = FileRepo(QNDIR)
+#    filerepo.scan_files()
+#    if args.list_notes:
+#        for filen in filerepo.filenames():
+#            print(filen)
+#        sys.exit(0)
+#    if args.search != -1:
+#        search_list = filerepo.filenames()
+#        for filen in filerepo.filenames():
+#            bool_list = []
+#            for search_string in args.search:
+#                bool_list.append(search_string in filen)
+#            if all(bool_list):
+#                print(filen)
+#
+#        sys.exit(0)
 
 
 

@@ -58,7 +58,7 @@
 
 
 # Custom rofi keybindings (none yet)
-delete="Alt+r"
+delete="Alt+BackSpace"
 see_trash="Alt+t"
 rename="Alt+space"
 open_dir="Alt+d"

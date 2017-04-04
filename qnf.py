@@ -1,5 +1,5 @@
 import qng
 import qn
-qn.check_environment(True)
-options = qn.generate_options('fzf')
+qn.check_environment()
+options = qn.gen_default_options('fzf')
 qng.show_default(options)

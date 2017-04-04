@@ -296,7 +296,7 @@ def show_trash(qn_options):
 
     MESG = 'Press enter to restore file. "'
     MESG += hkman.get_keybinding('showtrash') + '" to go back to qn.'
-    trash_repo = qn.FileRepo(qn.QNTRASH)
+    trash_repo = qn.FileRepo(qn._QNTRASH)
     trash_repo.scan_files()
     trash_repo.sort('cdate')
     applist = trash_repo.filenames()
@@ -414,7 +414,7 @@ def show_help(qn_options, hotkey_manager, enter_help):
 if __name__ == '__main__':
     qn.check_environment(True)
 
-    options = qn.generate_options('fzf')
-#    options = qn.generate_options('rofi')
+    options = qn.gen_default_options('fzf')
+#    options = qn.gen_default_options('rofi')
     show_default(options)
 
