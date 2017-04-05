@@ -17,7 +17,7 @@ _HOTKEY_COMMANDS = ('forcenew', 'rename', 'delete', 'grep', 'showtrash'
                     ,'showhelp', 'sortcdate', 'sortname', 'sortmdate'
                     , 'sortsize')
 
-_INTERACTIVE={'rofi':'False', 'fzf':'True'}
+_INTERACTIVE={'rofi':False, 'fzf':True}
 _DEFAULT_CONFIG='~/.config/qn/config'
 _DEFAULT_COMMAND = {}
 _DEFAULT_COMMAND['rofi'] = ['rofi', '-sep', '\\0', '-columns', '1'

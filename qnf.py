@@ -5,7 +5,6 @@ import config_parse
 
 qnoptions = config_parse.QnOptions(app='fzf', run_parse_config=True)
 qnoptions.check_environment()
-print(qnoptions.print_options())
 
 qnrf = qng.QnAppRF(qnoptions)
 qnrf.show_default()

@@ -453,7 +453,9 @@ if __name__ == '__main__':
     qn_options = config_parse.QnOptions(run_parse_config=True)
     qn_options.check_environment()
     qn = QnApp(qn_options)
-    qn.move_note("undelete", 'test2')
+    qn.file_repo=FileRepo(qn_options.QNDIR())
+    qn.file_repo.scan_files()
+    print(qn.file_repo.filenames())
 
 #    parser = argparse.ArgumentParser(prog='qn', 
 #                        description="Quick Note Manager.")
