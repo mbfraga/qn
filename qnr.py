@@ -1,6 +1,11 @@
 import qng
 import qn
+import qng
+import config_parse
 
-qn.check_environment()
-options = qn.gen_default_options('rofi')
-qng.show_default(options)
+qnoptions = config_parse.QnOptions(app='rofi', run_parse_config=True)
+qnoptions.check_environment()
+
+qnrf = qng.QnAppRF(qnoptions)
+qnrf.show_default()
+
