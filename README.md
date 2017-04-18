@@ -12,12 +12,6 @@ on top of [rofi](https://github.com/DaveDavenport/rofi), and the other built on
 top of [fzf](https://github.com/junegunn/fzf). However, I'd like to make it
 easy to switch the underlying applications. 
 
-At its most elemental level, qn is more about a philosophy of managing notes. I
-suggest everyone to try building their own note-taking app. We are all
-different, and these rudimentary tasks are best tailored to those personal
-idiosyncracies. qn started as a bash script (see qn.sh) and is now composed of
-a few python scripts that put together terminal and graphical applications.
-
 This application is naive and simple by design, but I do intend to implement a
 few niceties.
 
@@ -33,7 +27,6 @@ can even sync it to devices with very little storage.
    - Nondestructive. Deleted files are moved to a trash directory, and
      conflicts are stored.
    - Quickly grep files (e.g., type a query in qnr, and press alt-s)
-   - Rudimentary tag management (qn-specific, no metadata is stored in files)
 
 # Dependencies
 
@@ -44,12 +37,7 @@ can even sync it to devices with very little storage.
 # Todo
 
 * Make this app a bit more user friendly
-   - Create a help page for both rofi and fzf apps, with a comprehensive set of
-       explanations of the features.
-   - Look into $XDG_HOME_CONFIG/.qn and ~/.qn for configuration files.
    - Make a better presentation of this tool.
-   - Allow a way to pass rofi commands to qnr
-   - Modify qnf keybindings to feel more natural and closer to qnr
    - Implement CLI (Very low priority, fzf is close enough)
    - Implement way to permanently delete notes in the trash
 
@@ -58,12 +46,9 @@ I will make the installation easier soon.
 
 1. git clone https://github.com/mbfraga/qn
 
-2. (For Rofi) create a file ~/bin/qnr that runs the python script qnr.py 
+2. Copy sample config to ~/.config/qn/config and edit as necessary
 
-2. (For fzf) create a file ~/bin/qnf that runs the python script qnf.py
+3. (For Rofi) create a file ~/bin/qnr that runs the python script qnr.py 
 
-3. Edit qn.py and change the qn directory (QNDIR)
-
-Note: Check the keybindings at the beginning of qnr.py and qnf.py to see the
-keybindings. I will make help screens in the near future.
+4. (For fzf) create a file ~/bin/qnf that runs the python script qnf.py
 

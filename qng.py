@@ -132,6 +132,7 @@ class QnAppRF(qn.QnApp):
             self.file_repo[instance] = qn.FileRepo(self.options.QNDIR())
             self.file_repo[instance].scan_files()
 
+        print(self.options.sortby(), self.options.sortrev())
         self.file_repo[instance].sort(self.options.sortby()
                                     , self.options.sortrev())
 
@@ -139,9 +140,9 @@ class QnAppRF(qn.QnApp):
         MESG += '" to see a list of hotkeys.'
         if self.options.help():
             MESG += self.options.help()
-        MESG += ' Sorted by: ' + self.options.sortby() 
+        MESG += ' Sorted by: ' + self.file_repo[instance].sorttype
 
-        if self.options.sortrev():
+        if self.file_repo[instance].sortrev:
             MESG += ' [v]'
         else:
             MESG += ' [^]'

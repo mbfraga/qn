@@ -284,6 +284,7 @@ class QnOptions():
                     + " ,showhelp,sortcdate,sortname,sortmdate,sortsize")
 
         options = p.parse_args()
+        print(options)
 
 
         if not os.path.isfile(default_config_path_expanded):
@@ -369,7 +370,8 @@ class QnOptions():
         else:
             self.__options['sortby'] = options.sortby
 
-        self.__options['sortrev'] = options.sortrev
+        print("DEBUG", options.sortrev)
+        self.__options['sortrev'] = (options.sortrev == 'True')
 
 
     def check_environment(self):
