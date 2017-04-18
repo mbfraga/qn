@@ -299,6 +299,7 @@ class QnApp ():
 
     def new_note(self, note):
 
+
         inter = self.options.interactive()
         if '/' in note:
             note_dir = note.rsplit('/',1)[0]
@@ -308,7 +309,8 @@ class QnApp ():
             os.system(self.options.editor() + " " 
                         + os.path.join(self.__QNDIR, note))
         else:
-            os.system(self.options.terminal() + " -e " + self.options.editor() 
+            print(self.options.terminal() + " -e " + self.options.editor() + " " + os.path.join(self.__QNDIR, note))
+            os.system(self.options.terminal() + ' -e ' + self.options.editor() 
                       + " " + os.path.join(self.__QNDIR, note))
         return(0)
 
