@@ -7,7 +7,7 @@ sortrev=False
 qnterminal="urxvt"
 qneditor="vim"
 
-rofi-settings =  -width 55 -lines 15
+#rofi-settings =  -width 55 -lines 15
 #fzf-settings  = 
 
 #rofi-keybindings = 
