@@ -132,7 +132,6 @@ class QnAppRF(qn.QnApp):
             self.file_repo[instance] = qn.FileRepo(self.options.QNDIR())
             self.file_repo[instance].scan_files()
 
-        print(self.options.sortby(), self.options.sortrev())
         self.file_repo[instance].sort(self.options.sortby()
                                     , self.options.sortrev())
 

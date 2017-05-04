@@ -7,6 +7,9 @@ sortrev=False
 qnterminal="urxvt"
 qneditor="vim"
 
+# If using something like gedit, set interactive to True
+interactive = default # default/True/False
+
 #rofi-settings =  -width 55 -lines 15
 #fzf-settings  = 
 

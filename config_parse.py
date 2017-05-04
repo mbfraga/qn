@@ -72,8 +72,10 @@ _DEFAULT_HOTKEYS['fzf'] = {
 class QnOptions():
 
 
-    def __init__(self, app=None, qndir=None, run_parse_config = False):
+    def __init__(self, app=None, qndir=None, run_parse_config = False, 
+                 config_file_only = False):
 
+        self.config_file_only = config_file_only
         self.__app = None
         self.__force_app = app
         self.__qndir = qndir
@@ -218,6 +220,9 @@ class QnOptions():
     def set_sortrev(self, sortrev):
         self.__options['sortrev'] = sortrev
 
+    def set_interactive(self, interactive):
+        self.__interactive = interactive
+
 
     def print_options(self):
 
@@ -262,6 +267,8 @@ class QnOptions():
                 , help='default interface (rofi/fzf) to use')
         p.add('-r', default=False, action='store_true', help='run as rofi')
         p.add('-f', default=False, action='store_true', help='run as fzf')
+        p.add('--interactive', default="default", help='if false, runs text editor' + 
+                            ' from terminal (default/True/False)')
         p.add('--sortby', default='cdate'
                 , help='type of default sorting (cdate, mdate, name, size)')
         p.add('--sortrev', default=False, help='reverse sorting (True/False)')
@@ -283,8 +290,10 @@ class QnOptions():
                     + " Possible commands: forcenew,rename,delete,grep,showtrash"
                     + " ,showhelp,sortcdate,sortname,sortmdate,sortsize")
 
-        options = p.parse_args()
-        print(options)
+        if self.config_file_only:
+            options = p.parse_known_args()[0]
+        else:
+            options = p.parse_args()
 
 
         if not os.path.isfile(default_config_path_expanded):
@@ -314,7 +323,11 @@ class QnOptions():
             else:
                 self.__app = options.default_interface
 
-        self.__options['interactive'] = _INTERACTIVE[self.__app]
+        if options.interactive == "default":
+            self.__options['interactive'] = _INTERACTIVE[self.__app]
+        else:
+            self.__options['interactive'] = options.interactive
+
         self.__options['command'] = _DEFAULT_COMMAND[self.__app]
         self.__options['hotkeys'] = _DEFAULT_HOTKEYS[self.__app]
 
@@ -370,7 +383,6 @@ class QnOptions():
         else:
             self.__options['sortby'] = options.sortby
 
-        print("DEBUG", options.sortrev)
         self.__options['sortrev'] = (options.sortrev == 'True')
 
 
