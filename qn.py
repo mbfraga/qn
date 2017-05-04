@@ -1,3 +1,5 @@
+import time
+timea = time.time()
 import os
 import sys
 import argparse
@@ -8,6 +10,7 @@ import mimetypes
 from stat import ST_CTIME, ST_ATIME, ST_MTIME, ST_SIZE
 from operator import itemgetter
 import config_parse
+
 
 QNDIR=''
 
@@ -33,10 +36,14 @@ def file_mime_type(filename):
 class FileRepo:
     def __init__(self, dirpath=None):
         self.path = dirpath
-        self.file_list = []
+        self.file_list = []    # list of files - dicts
+        self.pfile_list = []  # list of pinned files - dicts
+        self.pinned_filenames = [] #List of filenames that will be pinned 
         self.sorttype = "none"
         self.sortrev = False
+
         self.filecount = 0
+        self.pfilecount = 0
 
         self.tags = None
 
@@ -54,6 +61,13 @@ class FileRepo:
     # Scans the directory for files and populates the file list and linebs
     def scan_files(self):
         self.filecount = 0
+        self.pfilecount = 0
+        pintot = len(self.pinned_filenames)
+        if pintot != 0:
+            temp_pinned_filenames = list(self.pinned_filenames)
+        else:
+            temp_pinned_filenames = False
+
         for root, dirs, files in os.walk(self.path, topdown=True):
             for name in files:
                 fp = os.path.join(root, name)
@@ -76,8 +90,26 @@ class FileRepo:
                 file_props['misc'] = None
                 file_props['tags'] = None
 
+                if temp_pinned_filenames:
+                    if name in temp_pinned_filenames:
+                        temp_pinned_filenames.remove(name)
+                        self.pfile_list.append(file_props)
+                        self.pfilecount += 1
+                        continue
+
+                    self.file_list.append(file_props)
+                    self.filecount += 1
+                    continue
+
+                #if name in self.pinned_filenames:
+                #    self.pfile_list.append(file_props)
+                #    self.pfilecount += 1
+                #else:
+                #    self.file_list.append(file_props)
+                #    self.filecount += 1
                 self.file_list.append(file_props)
                 self.filecount += 1
+
 
 
     def add_file(self, filepath, misc_prop=None):
@@ -114,16 +146,22 @@ class FileRepo:
         self.sorttype=sortby
         self.sortrev=sortrev
 
-    def get_property_list(self, prop='name'):
-        return(list(itemgetter(prop)(filen) for filen in self.file_list))
+    def get_property_list(self, prop='name', pinned_first=True):
+        if pinned_first:
+            plist = list(itemgetter(prop)(filen) for filen in self.file_list)
+            plist += list(itemgetter(prop)(filen) for filen in self.pfile_list)
+        else:
+            plist = list(itemgetter(prop)(filen) for filen in self.pfile_list)
+            plist += list(itemgetter(prop)(filen) for filen in self.file_list)
+        return(plist)
 
-    def filenames(self):
-        return(self.get_property_list('name'))
+    def filenames(self, pinned_first=True):
+        return(self.get_property_list('name', pinned_first))
 
     def filepaths(self):
-        return(self.get_property_list('fullpath'))
+        return(self.get_property_list('fullpath', pinned_first))
 
-    def lines(self, format_list=None):
+    def lines(self, format_list=None, pinned_first=True):
         lines = []
         if not format_list:
             format_list = self.lineformat
@@ -146,6 +184,10 @@ class FileRepo:
             lines.append(line)
 
         return(lines)
+
+    def pin_files(self, filelist_topin):
+        self.pinned_filenames = filelist_topin
+        return(1)
 
 
     def grep_files(self, filters_string):
@@ -441,7 +483,7 @@ class QnApp ():
 #    
 #    filtered_list = []
 #    for key,value in tagsdict.items():
-#        if key == '__taglist':
+#       if key == '__taglist':
 #            continue
 #        if tagname in value:
 #            filtered_list.append(key)
@@ -456,8 +498,17 @@ if __name__ == '__main__':
     qn_options.check_environment()
     qn = QnApp(qn_options)
     qn.file_repo=FileRepo(qn_options.QNDIR())
+    qn.file_repo.pin_files(['pinplease', 'nothing'])
+
     qn.file_repo.scan_files()
-    print(qn.file_repo.filenames())
+    qn.file_repo.sort('cdate', False)
+    qn.file_repo.filenames()
+
+    for filen in qn.file_repo.filenames():
+        print(filen)
+
+    timeb = time.time()
+    print('Elapsed time: ' + str(timeb-timea) + ' seconds')
 
 #    parser = argparse.ArgumentParser(prog='qn', 
 #                        description="Quick Note Manager.")
