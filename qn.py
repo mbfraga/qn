@@ -33,6 +33,22 @@ def file_mime_type(filename):
     return(mtype)
 
 
+def terminal_open(terminal, command, title=None):
+    if not title:
+        title = 'qn: ' + terminal
+    else:
+        title = 'qn: ' + title
+
+    if terminal in ['urxvt', 'xterm', 'gnome-terminal']:
+        generated_command = terminal + ' -title "' + title + '"'
+    elif terminal in ['termite', 'xfce-terminal']:
+        generated_command = terminal + ' --title "' + title + '"'
+    else:
+        generated_command = terminal + ' -T "' + title + '"'
+
+    os.system(generated_command + " -e " + command)
+
+
 class FileRepo:
     def __init__(self, dirpath=None):
         self.path = dirpath
@@ -319,19 +335,22 @@ class QnApp ():
         fulldir = os.path.join(self.__QNDIR, note)
         if os.path.isfile(fulldir):
             mime = file_mime_type(note).split("/")
+            editor_command = self.options.editor() + " " + fulldir
 
             if (mime[0] == 'text' or mime[0] == 'None'):
                 if inter:
-                    os.system(self.options.editor() + " " + fulldir)
+                    os.system(editor_command)
                 else:
-                    os.system(self.options.terminal() + " -e "
-                              + self.options.editor() + " " + fulldir)
+                    terminal_open(self.options.terminal(), editor_command, note) 
+                    #os.system(self.options.terminal() + " -e "
+                    #          + self.options.editor() + " " + fulldir)
             elif (mime[1] == 'x-empty'):
                 if inter:
-                    os.system(self.options.editor() + " " + fulldir)
+                    os.system(editor_command)
                 else:
-                    os.system(self.options.terminal() + " -e " 
-                              + self.options.editor() + " " + fulldir)
+                    terminal_open(self.options.terminal(), editor_command, note) 
+                    #os.system(self.options.terminal() + " -e " 
+                    #          + self.options.editor() + " " + fulldir)
             else:
                 os.system(self.options.launcher() + " " + fulldir)
         else:
@@ -347,13 +366,15 @@ class QnApp ():
             note_dir = note.rsplit('/',1)[0]
             if not os.path.isdir(note_dir):
                 os.makedirs(os.path.join(self.__QNDIR, note_dir), exist_ok=True)
+        editor_command = self.options.editor() 
+        editor_command += " " + os.path.join(self.__QNDIR, note)
         if inter:
             os.system(self.options.editor() + " " 
                         + os.path.join(self.__QNDIR, note))
         else:
-            print(self.options.terminal() + " -e " + self.options.editor() + " " + os.path.join(self.__QNDIR, note))
-            os.system(self.options.terminal() + ' -e ' + self.options.editor() 
-                      + " " + os.path.join(self.__QNDIR, note))
+            terminal_open(self.options.terminal(), editor_command, note)
+            #os.system(self.options.terminal() + ' -e ' + self.options.editor() 
+            #          + " " + os.path.join(self.__QNDIR, note))
         return(0)
 
 
