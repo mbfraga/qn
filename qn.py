@@ -466,8 +466,8 @@ class QnApp ():
                     os.system(editor_command)
                 else:
                     terminal_open(self.__options.terminal(), editor_command, note) 
-                    #os.system(self.options.terminal() + " -e "
-                    #          + self.options.editor() + " " + fulldir)
+                    #os.system(self.__options.terminal() + " -e "
+                    #          + self.__options.editor() + " " + fulldir)
             elif (mime[1] == 'x-empty'):
                 if inter:
                     os.system(editor_command)
@@ -490,14 +490,14 @@ class QnApp ():
             note_dir = note.rsplit('/',1)[0]
             if not os.path.isdir(note_dir):
                 os.makedirs(os.path.join(self.__QNDIR, note_dir), exist_ok=True)
-        editor_command = self.options.editor() 
+        editor_command = self.__options.editor() 
         editor_command += " " + os.path.join(self.__QNDIR, note)
         if inter:
             os.system(self.__options.editor() + " " 
                         + os.path.join(self.__QNDIR, note))
         else:
             terminal_open(self.__options.terminal(), editor_command, note)
-            #os.system(self.options.terminal() + ' -e ' + self.options.editor() 
+            #os.system(self.__options.terminal() + ' -e ' + self.__options.editor() 
             #          + " " + os.path.join(self.__QNDIR, note))
         return(0)
 
