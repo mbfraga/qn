@@ -95,7 +95,7 @@ class QnAppRF(qn.QnApp):
             if not FILTER:
                 FILTER = None
             if KEY:
-                if instance in self.hkman(instance):
+                if self.hkman(instance):
                     OPTSEL = self.hkman(instance).get_opt(KEY)
                 else:
                     OPTSEL = None
