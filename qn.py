@@ -35,6 +35,20 @@ def file_mime_type(filename):
     return(mtype)
 
 
+def file_mime_type_bash(filepath): # This is more reliable it seems...
+        proc = Popen(['xdg-mime', 'query', 'filetype', filepath]
+                     , stdout=PIPE)
+        mtype = proc.stdout.read().decode('utf-8')
+        exit_code = proc.wait()
+        if not mtype:
+            mtype = 'None/None'
+
+        return(mtype)
+
+
+
+
+
 def terminal_open(terminal, command, title=None):
     if not title:
         title = 'qn: ' + terminal
@@ -458,7 +472,8 @@ class QnApp ():
         inter = self.__options.interactive()
         fulldir = os.path.join(self.__QNDIR, note)
         if os.path.isfile(fulldir):
-            mime = file_mime_type(note).split("/")
+            #mime = file_mime_type(note).split("/")
+            mime = file_mime_type_bash(fulldir).split("/")
             editor_command = self.__options.editor() + " " + fulldir
 
             if (mime[0] == 'text' or mime[0] == 'None'):
