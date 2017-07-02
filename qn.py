@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import time
 timea = time.time()
 import os
@@ -44,9 +47,6 @@ def file_mime_type_bash(filepath): # This is more reliable it seems...
             mtype = 'None/None'
 
         return(mtype)
-
-
-
 
 
 def terminal_open(terminal, command, title=None):

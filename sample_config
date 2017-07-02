@@ -1,11 +1,11 @@
-default-intrerface=rofi
+default-interface=rofi
 qndir=~/syncthing/smalldocs/quicknotes
 
-sortby="cdate"
+sortby=cdate
 sortrev=False
 
-qnterminal="urxvt"
-qneditor="vim"
+terminal=urxvt
+text-editor=vim
 
 # If using something like gedit, set interactive to True
 interactive = default # default/True/False
