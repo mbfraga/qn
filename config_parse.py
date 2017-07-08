@@ -36,32 +36,32 @@ _DEFAULT_COMMAND['fzf'] = ['fzf'
                 ]
 _DEFAULT_HOTKEYS = {}
 _DEFAULT_HOTKEYS['rofi'] = {
-  'forcenew'  :['forcenew'  ,'Alt+Return' , 'Force Create New Note'],
-  'rename'    :['rename'    ,'Alt+space'  , 'Rename Note'],
-  'delete'    :['delete'    ,'Alt+r'      , 'Delete Note'],
-  'grep'      :['grep'      ,'Alt+g'      , 'Grep Notes'],
-  'showtrash' :['showtrash' ,'Alt+t'      , 'Show Trash'],
-  'showhelp'  :['showhelp'  ,'Alt+h'      , 'Show Help'],
-  'sortcdate' :['sortcdate' ,'Alt+2'      , 'Sort by Creation Date'],
-  'sortname'  :['sortname'  ,'Alt+1'      , 'Sort By Name'],
-  'sortmdate' :['sortmdate' ,'Alt+3'      , 'Sort by Modificatin Date'],
-  'sortsize'  :['sortsize'  ,'Alt+4'      , 'Sort by Size'],
+  'forcenew'  :['forcenew'  ,'Alt-Return' , 'Force Create New Note'],
+  'delete'    :['delete'    ,'Alt-d'      , 'Delete Note'],
+  'rename'    :['rename'    ,'Alt-space'  , 'Rename Note'],
+  'grep'      :['grep'      ,'Alt-s'      , 'Grep Notes'],
+  'showtrash' :['showtrash' ,'Alt-t'      , 'Show Trash'],
+  'showhelp'  :['showhelp'  ,'Alt-h'      , 'Show Help'],
+  'sortcdate' :['sortcdate' ,'Alt-2'      , 'Sort by Creation Date'],
+  'sortname'  :['sortname'  ,'Alt-1'      , 'Sort By Name'],
+  'sortmdate' :['sortmdate' ,'Alt-3'      , 'Sort by Modificatin Date'],
+  'sortsize'  :['sortsize'  ,'Alt-4'      , 'Sort by Size'],
   }
 
 _DEFAULT_HOTKEYS['fzf'] = {
-  'forcenew'  :['forcenew'  ,'alt-return' , 'Force Create New Note'],
-  'delete'    :['delete'    ,'alt-r'      , 'Delete Note'],
-  'rename'    :['rename'    ,'alt-space'  , 'Rename Note'],
-  'addtag'    :['addtag'    ,'alt-n'      , 'Add Tag to Note (Not Implemented)'],
-  'grep'      :['grep'      ,'alt-g'      , 'Grep Notes'],
-  'showtrash' :['showtrash' ,'alt-t'      , 'Show Trash'],
-  'showtagb'  :['showtagb'  ,'alt-j'      , 'Show Note Tags (Not Implemented)'],
-  'showtagm'  :['showtagm'  ,'alt-k'      , 'Filter By Tags (Not Implemented)'],
-  'showhelp'  :['showhelp'  ,'alt-h'      , 'Show Help'],
-  'sortname'  :['sortname'  ,'alt-1'      , 'Sort By Name'],
-  'sortcdate' :['sortcdate' ,'alt-2'      , 'Sort by Creation Date'],
-  'sortmdate' :['sortmdate' ,'alt-3'      , 'Sort by Modificatin Date'],
-  'sortsize'  :['sortsize'  ,'alt-4'      , 'Sort by Size']
+  'forcenew'  :['forcenew'  ,'Alt-Return' , 'Force Create New Note'],
+  'delete'    :['delete'    ,'Alt-d'      , 'Delete Note'],
+  'rename'    :['rename'    ,'Alt-space'  , 'Rename Note'],
+  'grep'      :['grep'      ,'Alt-s'      , 'Grep Notes'],
+  'showtrash' :['showtrash' ,'Alt-t'      , 'Show Trash'],
+  'addtag'    :['addtag'    ,'Alt-n'      , 'Add Tag to Note (Not Implemented)'],
+  'showtagb'  :['showtagb'  ,'Alt-j'      , 'Show Note Tags (Not Implemented)'],
+  'showtagm'  :['showtagm'  ,'Alt-k'      , 'Filter By Tags (Not Implemented)'],
+  'showhelp'  :['showhelp'  ,'Alt-h'      , 'Show Help'],
+  'sortname'  :['sortname'  ,'Alt-1'      , 'Sort By Name'],
+  'sortcdate' :['sortcdate' ,'Alt-2'      , 'Sort by Creation Date'],
+  'sortmdate' :['sortmdate' ,'Alt-3'      , 'Sort by Modificatin Date'],
+  'sortsize'  :['sortsize'  ,'Alt-4'      , 'Sort by Size']
   }
 
 
@@ -246,6 +246,12 @@ class QnOptions():
         print()
         print("command         =", self.__options['command'])
         print("command_extra   =", self.__options['command_extra'])
+        print()
+        print("keyboard        = ...")
+
+        print("    " + "".ljust(12) + "[command, keybinding, help]")
+        for key,value in self.__options['hotkeys'].items():
+            print("    " + str(key).ljust(12) + "" + str(value))
 
 
     def parse_config(self, argv=None): 
@@ -276,6 +282,10 @@ class QnOptions():
                 , help="rofi settings to append. Format as: '-width 1 -lines 15'"
                     + ", surround by '( )' if using command line argument"
                     + ". In config, exclude quotes.")
+        p.add('--rofi-custom-command', default=False
+                , help="define path to rofi command to use. e.g., /usr/bin/rofi")
+        p.add('--fzf-custom-command', default=False
+                , help="define path to fzf command to use. e.g., /usr/bin/fzf")
         p.add('--fzf-settings', default=False
                 , help="rofi settings to append. Format as: '--height=100; --border'"
                     + ", surround by '( )' if using command line argument"
@@ -331,26 +341,60 @@ class QnOptions():
         self.__options['command'] = _DEFAULT_COMMAND[self.__app]
         self.__options['hotkeys'] = _DEFAULT_HOTKEYS[self.__app]
 
+        if options.rofi_custom_command and self.__app == 'rofi':
+            print(self.__options['command'])
+            self.__options['command'][0] = options.rofi_custom_command
+        if options.fzf_custom_command  and self.__app == 'fzf':
+            self.__options['command'][0] = options.fzf_custom_command
+
+
 
         self.__qndir = os.path.expanduser(options.qndir)
         self.__qndata = os.path.join(self.__qndir, '.qn')
         self.__qntrash = os.path.join(self.__qndata, 'trash')
 
         command_extra = False
+        keybindings_extra = False
         rofi_extra_settings = options.rofi_settings
-        if rofi_extra_settings and self.__app == 'rofi':
-            if rofi_extra_settings[0] == "(":
-                command_extra = rofi_extra_settings[1:-1]
-            else:
-                command_extra = rofi_extra_settings
+        rofi_keybindings = options.rofi_keybindings
+        if self.__app == 'rofi':
+            if rofi_extra_settings:
+                if rofi_extra_settings[0] == "(":
+                    command_extra = rofi_extra_settings[1:-1]
+                else:
+                    command_extra = rofi_extra_settings
+            if rofi_keybindings:
+                if rofi_keybindings[0] == "(":
+                    keybindings_extra = rofi_keybindings[1:-1]
+                else:
+                    keybindings_extra = rofi_keybindings
         fzf_extra_settings = options.fzf_settings
-        if fzf_extra_settings and self.__app == 'fzf':
-            if fzf_extra_settings[0] == "(":
-                command_extra = fzf_extra_settings[1:-1]
-            else:
-                command_extra = fzf_extra_settings
+        fzf_keybindings = options.fzf_keybindings
+        if self.app == 'fzf':
+            if fzf_extra_settings:
+                if fzf_extra_settings[0] == "(":
+                    command_extra = fzf_extra_settings[1:-1]
+                else:
+                    command_extra = fzf_extra_settings
+            if fzf_keybindings:
+                if fzf_keybindings[0] == "(":
+                    keybindings_extra = fzf_keybindings[1:-1]
+                else:
+                    keybindings_extra = fzf_keybindings
         if command_extra:
             self.__options['command_extra'] = command_extra.split()
+
+        if keybindings_extra:
+            for binding in keybindings_extra.split(';'):
+                try:
+                    commb,keyb = binding.split('=')
+                except ValueError:
+                    print("ERROR: Invalid binding '" + binding + "'.")
+                    print("Use 'command;binding' syntax")
+                    print("Ignoring binding")
+                    continue
+
+                self.__options['hotkeys'][commb][1] = keyb
 
 
 
@@ -454,6 +498,8 @@ class QnOptions():
                     arguments.extend(['-filter', self.filter()])
 
         return(arguments)
+
+
 
 
 

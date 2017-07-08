@@ -1,5 +1,5 @@
 default-interface=rofi
-qndir=~/syncthing/smalldocs/quicknotes
+qndir=~/quicknotes
 
 sortby=cdate
 sortrev=False

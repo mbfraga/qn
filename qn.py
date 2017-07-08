@@ -75,7 +75,7 @@ def sizeof_fmt(num, suffix='B'):
 
 class FileRepo:
     def __init__(self, dirpath=None):
-        self.__path = dirpath
+        self.__path = os.path.join(dirpath, "")
         self.__file_list = []    # list of files - dicts
         self.__pfile_list = []  # list of pinned files - dicts
         self.__pinned_filenames = [] #List of filenames that will be pinned 
@@ -111,7 +111,7 @@ class FileRepo:
         for root, dirs, files in os.walk(self.__path, topdown=True):
             for name in files:
                 fp = os.path.join(root, name)
-                fp_rel = fp[len(self.__path)+1:]
+                fp_rel = fp[len(self.__path):]
 
                 if (fp_rel[0] == '.'):
                     continue
@@ -673,11 +673,10 @@ if __name__ == '__main__':
     qn.file_repo().scan_files()
     qn.file_repo().sort('size', True)
 
-    #qn.list_files('filenames')
+    qn.list_notes()
     #qn.list_files('filepaths')
     #qn.list_files('lines', lines_format_list=['name', 'size', 'cdate'])
 
-    qn.find_note(['onoma'], open_note=True)
 
 
     ## Print the first ten entries with a header

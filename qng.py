@@ -146,7 +146,6 @@ class QnAppRF(qn.QnApp):
         else:
             MESG += ' [^]'
 
-
         extra_args = self.opts().gen_instance_args(instance, alt_help=MESG)
         extra_args.extend(hotkey_args)
 
