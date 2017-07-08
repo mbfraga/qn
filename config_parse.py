@@ -342,7 +342,6 @@ class QnOptions():
         self.__options['hotkeys'] = _DEFAULT_HOTKEYS[self.__app]
 
         if options.rofi_custom_command and self.__app == 'rofi':
-            print(self.__options['command'])
             self.__options['command'][0] = options.rofi_custom_command
         if options.fzf_custom_command  and self.__app == 'fzf':
             self.__options['command'][0] = options.fzf_custom_command
