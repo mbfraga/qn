@@ -76,6 +76,7 @@ def sizeof_fmt(num, suffix='B'):
 class FileRepo:
     def __init__(self, dirpath=None):
         self.__path = os.path.join(dirpath, "")
+        self.__path_len = len(self.__path)
         self.__file_list = []    # list of files - dicts
         self.__pfile_list = []  # list of pinned files - dicts
         self.__pinned_filenames = [] #List of filenames that will be pinned 
@@ -111,7 +112,7 @@ class FileRepo:
         for root, dirs, files in os.walk(self.__path, topdown=True):
             for name in files:
                 fp = os.path.join(root, name)
-                fp_rel = fp[len(self.__path):]
+                fp_rel = fp[self.__path_len:]
 
                 if (fp_rel[0] == '.'):
                     continue
@@ -156,7 +157,7 @@ class FileRepo:
             print(filepath + " is not a file.")
             return
 
-        fp_rel = filepath[len(self.__path)+1:]
+        fp_rel = filepath[self.__path_len:]
 
         try:
             stat = os.stat(filepath)
@@ -473,21 +474,22 @@ class QnApp ():
         fulldir = os.path.join(self.__QNDIR, note)
         if os.path.isfile(fulldir):
             #mime = file_mime_type(note).split("/")
-            mime = file_mime_type_bash(fulldir).split("/")
-            editor_command = self.__options.editor() + " " + fulldir
+            mime = file_mime_type_bash(fulldir).strip().split("/")
+            fulldir = os.path.join(self.__QNDIR, note).strip()
+            editor_command = self.__options.editor() + " '" + fulldir + "'"
 
             if (mime[0] == 'text' or mime[0] == 'None'):
                 if inter:
                     os.system(editor_command)
                 else:
-                    terminal_open(self.__options.terminal(), editor_command, note) 
+                    terminal_open(self.__options.terminal(), editor_command) 
                     #os.system(self.__options.terminal() + " -e "
                     #          + self.__options.editor() + " " + fulldir)
             elif (mime[1] == 'x-empty'):
                 if inter:
                     os.system(editor_command)
                 else:
-                    terminal_open(self.__options.terminal(), editor_command, note) 
+                    terminal_open(self.__options.terminal(), editor_command) 
                     #os.system(self.__options.terminal() + " -e " 
                     #          + self.__options.editor() + " " + fulldir)
             else:
@@ -505,8 +507,9 @@ class QnApp ():
             note_dir = note.rsplit('/',1)[0]
             if not os.path.isdir(note_dir):
                 os.makedirs(os.path.join(self.__QNDIR, note_dir), exist_ok=True)
-        editor_command = self.__options.editor() 
-        editor_command += " " + os.path.join(self.__QNDIR, note)
+        editor_command = self.__options.editor() + " '"
+        editor_command += os.path.join(self.__QNDIR, note).strip()
+        editor_command += "'"
         if inter:
             os.system(self.__options.editor() + " " 
                         + os.path.join(self.__QNDIR, note))
@@ -522,6 +525,7 @@ class QnApp ():
         filepath = os.path.join(self.__QNDIR, note.strip())
         if os.path.isfile(filepath):
             self.open_note(note)
+
         else:
             self.new_note(note)
         return(0)
@@ -674,6 +678,11 @@ if __name__ == '__main__':
     qn.file_repo().sort('size', True)
 
     qn.list_notes()
+    grep = qn.file_repo().grep_files('world')
+
+    tfile=grep.filenames()[0]
+    qn.open_note(tfile)
+
     #qn.list_files('filepaths')
     #qn.list_files('lines', lines_format_list=['name', 'size', 'cdate'])
 

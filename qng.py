@@ -180,9 +180,14 @@ class QnAppRF(qn.QnApp):
         elif OPTSEL == 'showtrash':
             self.show_trash()
         elif OPTSEL == 'forcenew':
-            if not FILTER.strip():
+            if not FILTER:
+                if not NOTE:
+                    sys.exit(0)
+                else:
+                    self.open_note(NOTE)
+            elif not FILTER.strip():
                 sys.exit(0)
-            self.force_new_note(FILTER)
+            self.force_new_note(FILTER.strip())
         elif OPTSEL == 'grep':
             if not FILTER:
                 self.show_default()
