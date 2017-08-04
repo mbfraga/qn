@@ -62,7 +62,7 @@ def terminal_open(terminal, command, title=None):
     else:
         generated_command = terminal + ' -T "' + title + '"'
 
-    os.system(generated_command + " -e " + command)
+    os.system(generated_command + " -e \"" + command + "\"")
 
 
 def sizeof_fmt(num, suffix='B'):
