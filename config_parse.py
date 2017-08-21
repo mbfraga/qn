@@ -70,8 +70,18 @@ _DEFAULT_HOTKEYS['fzf'] = {
 
 
 class QnOptions():
+    """Class that handles options for qn that may be set by default, via a
+    config file, or via command line arguments.
 
-
+    Keyword arguments:
+        app -- launcher application name, 'rofi' or 'fzf' (default None).
+        qndir -- path to the directory holding the notes (default None).
+        run_parse_config -- whether or not to parse config file and command 
+                            line arguments when class is initialized. This can
+                            be done later. (default False)
+        config_file_only -- only parse config file, everything else will be set
+                            to defaults. (default False)
+    """
     def __init__(self, app=None, qndir=None, run_parse_config = False, 
                  config_file_only = False):
 
@@ -102,9 +112,8 @@ class QnOptions():
         else:
             self.configure_defaults()
 
-
     def configure_defaults(self):
-
+        """Configure options using default values."""
         if self.__force_app:
             self.__app = self.__force_app
         else:
@@ -225,7 +234,7 @@ class QnOptions():
 
 
     def print_options(self):
-
+        """Print options list. Usually for debugging."""
         print("Interface App   =", self.__app)
         print("interactive     =", self.interactive())
         print()
@@ -255,7 +264,7 @@ class QnOptions():
 
 
     def parse_config(self, argv=None): 
-
+        """Parse config file and command line arguments."""
         default_config_path_expanded = os.path.expanduser(_DEFAULT_CONFIG)
         config_used=None
 
@@ -430,7 +439,9 @@ class QnOptions():
 
 
     def check_environment(self):
-
+        """Check environment to make sure that everything needed for qn is
+        there.
+        """
         # This needs to be more robust
         QNDIR = self.QNDIR()
         QNDATA = self.QNDATA()
@@ -467,8 +478,13 @@ class QnOptions():
 
     def gen_instance_args(self, instance, alt_help=None
                                     , alt_title=None):
-
-
+        """Generate CLI arguments for fzf or rofi.
+        Keyword arguments:
+        alt_help -- string that will be used as an alternative help message for
+                    the instance (default None).
+        alt_title -- string that will be used as an alternative prompt for the
+                    instance (default None).
+        """
         if alt_help:
             helpn = alt_help
         else:
@@ -499,18 +515,10 @@ class QnOptions():
         return(arguments)
 
 
-
-
-
-
-# Check if program exists - linux only
 def cmd_exists(cmd):
-
-
+    """Check if a program exists in PATH. Linux only."""
     return call("type " + cmd, shell=True, 
         stdout=PIPE, stderr=PIPE) == 0
-
-
 
 
 if __name__ == '__main__':
