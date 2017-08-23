@@ -108,6 +108,7 @@ class QnOptions():
         self.__options['hotkeys'] = None
 
         if run_parse_config:
+            self.configure_defaults()
             self.parse_config()
         else:
             self.configure_defaults()
@@ -162,6 +163,7 @@ class QnOptions():
         return(self.__app)
 
     def title(self, subtext=''):
+        print(self.__options['title_header'])
         return(self.__options['title_header'] + subtext
                 + self.__options['title_suffix'])
 
@@ -282,7 +284,7 @@ class QnOptions():
                 , help='default interface (rofi/fzf) to use')
         p.add('-r', default=False, action='store_true', help='run as rofi')
         p.add('-f', default=False, action='store_true', help='run as fzf')
-        p.add('--interactive', default="default", help='if false, runs text editor' + 
+        p.add('--interactive', default="default", help='if False, runs text editor' + 
                             ' from terminal (default/True/False)')
         p.add('--sortby', default='cdate'
                 , help='type of default sorting (cdate, mdate, name, size)')
@@ -301,11 +303,11 @@ class QnOptions():
                     + ". In config, exclude quotes.")
         # Need to improve formatting on this...but not sure how
         p.add('--rofi-keybindings', default=False, help="define keybindings. Format as:"
-                    + " command=keybinding; e.g., forcenew=Alt+Return;rename=Alt+space."
+                    + " command=keybinding; e.g., forcenew=alt-Return;rename=alt-space."
                     + " Possible commands: forcenew,rename,delete,grep,showtrash"
                     + " ,showhelp,sortcdate,sortname,sortmdate,sortsize")
         p.add('--fzf-keybindings', default=False, help="define keybindings. Format as:"
-                    + " command=keybinding; e.g., forcenew=alt-Return;rename=alt+space."
+                    + " command=keybinding; e.g., forcenew=alt-Return;rename=alt-space."
                     + " Possible commands: forcenew,rename,delete,grep,showtrash"
                     + " ,showhelp,sortcdate,sortname,sortmdate,sortsize")
 
@@ -376,6 +378,7 @@ class QnOptions():
                     keybindings_extra = rofi_keybindings[1:-1]
                 else:
                     keybindings_extra = rofi_keybindings
+
         fzf_extra_settings = options.fzf_settings
         fzf_keybindings = options.fzf_keybindings
         if self.app == 'fzf':
@@ -485,11 +488,11 @@ class QnOptions():
         alt_title -- string that will be used as an alternative prompt for the
                     instance (default None).
         """
-        if alt_help:
+        if alt_help is not None:
             helpn = alt_help
         else:
             helpn = self.help()
-        if alt_title:
+        if alt_title is not None:
             titlen = alt_title
         else:
             titlen = self.title()

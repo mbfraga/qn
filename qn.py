@@ -676,12 +676,13 @@ if __name__ == '__main__':
     ## Scan the directory of the file repository and sort it
     qn.file_repo().scan_files()
     qn.file_repo().sort('size', True)
+    print(qn.opts().print_options())
 
-    qn.list_notes()
-    grep = qn.file_repo().grep_files('world')
+#    qn.list_notes()
+#    grep = qn.file_repo().grep_files('world')
 
-    tfile=grep.filenames()[0]
-    qn.open_note(tfile)
+#    tfile=grep.filenames()[0]
+    #qn.open_note('test')
 
     #qn.list_files('filepaths')
     #qn.list_files('lines', lines_format_list=['name', 'size', 'cdate'])
