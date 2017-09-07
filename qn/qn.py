@@ -13,8 +13,8 @@ import mimetypes
 from stat import ST_CTIME, ST_ATIME, ST_MTIME, ST_SIZE
 from operator import itemgetter
 
-import config_parse
-import hotkey_manager
+import qn.config_parser as config_parser
+import qn.hotkey_manager as hotkey_manager
 
 
 QNDIR=''
@@ -80,8 +80,8 @@ class FileRepo:
         self.__file_list = []    # list of files - dicts
         self.__pfile_list = []  # list of pinned files - dicts
         self.__pinned_filenames = [] #List of filenames that will be pinned 
-        self.sorttype = "none"
-        self.sortrev = False
+        self.__sorttype = "none"
+        self.__sortrev = False
 
         self.__filecount = 0
         self.__pfilecount = 0
@@ -98,9 +98,18 @@ class FileRepo:
         self.__linebs['misc'] = 100
         self.__linebs['tags'] = 50
 
+    @property
+    def sorttype(self):
+        return(self.__sorttype)
 
-    # Scans the directory for files and populates the file list and linebs
+    @property
+    def sortrev(self):
+        return(self.__sortrev)
+
     def scan_files(self):
+        """Scans the directory for files and populates the file list and 
+        linebs.
+        """
         self.__filecount = 0
         self.__pfilecount = 0
         pintot = len(self.__pinned_filenames)
@@ -153,6 +162,12 @@ class FileRepo:
 
 
     def add_file(self, filepath, misc_prop=None):
+        """Add a file to the file repo.
+
+        Keyword arguments:
+        filepath -- path to file
+        misc_props -- string to add as a 'misc' property to file
+        """
         if not os.path.isfile(filepath):
             print(filepath + " is not a file.")
             return
@@ -178,16 +193,23 @@ class FileRepo:
 
 
     def sort(self, sortby='name', sortrev=False):
+        """Sort notes
+
+        Keyword arguments:
+            sortby -- type of sort (default 'name')
+            sortrev -- boolean on whether to do a reverse sort
+        """
         if sortby not in ['size', 'adate', 'mdate', 'cdate', 'name']:
             print("Key '" + sortby + "' is not valid.")
             print("Choose between size, adate, mdate, cdate or name.")
 
         self.__file_list = sorted(self.__file_list, 
                             key=itemgetter(sortby), reverse=not sortrev)
-        self.sorttype=sortby
-        self.sortrev=sortrev
+        self.__sorttype=sortby
+        self.__sortrev=sortrev
 
     def get_property_list(self, prop='name', pinned_first=True):
+        """Get a list of a particular property for each file."""
         if pinned_first:
             plist = list(itemgetter(prop)(filen) for filen in self.__file_list)
             plist += list(itemgetter(prop)(filen) for filen in self.__pfile_list)
@@ -197,18 +219,25 @@ class FileRepo:
         return(plist)
 
     def filenames(self, pinned_first=True):
+        """Get a list of filenames"""
         return(self.get_property_list('name', pinned_first))
 
     def filepaths(self, pinned_first=True):
+        """Get a list of filepaths"""
         return(self.get_property_list('fullpath', pinned_first))
 
     def filecount(self, include_normal=True, include_pinned=True):
+        """Get the number of files in the repo"""
         return(self.__filecount + self.__pfilecount)
         
     def set_lineformat(self, new_lineformat):
+        """Set the lineformat, which is a list of properties in the order
+        in which they should be arranged by lines().
+        """
         self.__lineformat = new_lineformat
 
     def lines(self, format_list=None, pinned_first=True):
+        """Return a list of nicely formattted lines for each file."""
         lines = []
         if not format_list:
             format_list = self.__lineformat
@@ -236,11 +265,13 @@ class FileRepo:
         return(lines)
 
     def pin_files(self, filelist_topin):
+        """Pin a file WIP"""
         self.__pinned_filenames = filelist_topin
         return(1)
 
 
     def grep_files(self, filters_string):
+        """Search the contents of files and return matches. Uses grep."""
         if not self.__file_list:
             print("No files added to file repo")
             return(1)
@@ -269,34 +300,57 @@ class FileRepo:
 
 
 class QnApp ():
-    # Must pass class of type QnOptions
+    """Class that handles notes.
+    
+    Keyword arguments:
+    qnoptions -- QnOptions class.
+    """
     def __init__(self, qnoptions):
         self.__options = qnoptions
-        self.__app = qnoptions.app()
-        self.__QNDIR = qnoptions.QNDIR()
-        self.__QNTRASH = qnoptions.QNTRASH()
+        self.__app = qnoptions.app
+        self.__qndir = qnoptions.qndir
+        self.__qntrash = qnoptions.qntrash
         self.__hkman = {}
         self.__file_repo = {}
 
-
-    ## CLASS MODIFY METHODS
-
     def add_repo(self, repopath=None, repoinstance='default',):
-        if repopath is None:
-            repopath = self.__QNDIR
+        """Add a note repository to an instance of qn. It creates a FileRepo
+        class.
 
+        Keyword arguments:
+        repopath -- path from which to generate the note repository. If None,
+                    use the one in self.options (default None)
+        repoinstance -- qn instance name for the repository. This allows qn
+                        to have multiple repositories that can be handled
+                        independently.
+        """
+        if repopath is None:
+            repopath = self.__qndir
         self.__file_repo[repoinstance] = FileRepo(repopath)
 
     def add_existing_repo(self, existing_file_repo, repoinstance):
+        """Add an existing, populated, FileRepo class to an instance."""
         self.__file_repo[repoinstance] = existing_file_repo
 
-    ## CLASS INSPECT METHODS
-
+    @property
     def app(self):
         return(self.__app)
 
-    def opts(self):
+    @property
+    def launcher(self):
+        return(self.__app)
+
+    @property
+    def options(self):
         return(self.__options)
+
+    @property
+    def qndir(self):
+        return(self.__qndir)
+
+    @property
+    def qntrash(self):
+        return(self.__qntrash)
 
     def hkman(self, instance='default'):
         if instance in self.__hkman.keys():
@@ -305,6 +359,7 @@ class QnApp ():
             return(False)
 
     def add_hkman(self, instance='default'):
+        """Add HotkeyManager class to a qn instance"""
         self.__hkman[instance] = hotkey_manager.HotkeyManager(app=self.__app)
 
 
@@ -320,6 +375,20 @@ class QnApp ():
 
     def list_notes(self, printby='filenames', instance='default'
                     , lines_format_list=None, pinned_first=True):
+        """Print a list of notes.
+
+        Keyword arguments:
+        printby -- string that identifies property of notes to print 
+                   (default filenames)
+        instance -- qn instance to print (default 'default')
+        lines_format_list -- list of format names used in printby='lines'
+                             (default None)
+        pinned_first -- Not Implemented
+        """
+        if not self.__file_repo:
+            print("Please populate QnApp with a file repository.")
+            print("This can be done via QnApp.add_repo()")
+            sys.exit(1)
         if printby == 'filenames':
             for filename in self.__file_repo[instance].filenames(pinned_first):
                 print(filename)
@@ -337,12 +406,18 @@ class QnApp ():
                     " Use 'filenames', 'filepaths', or 'lines'.")
 
 
-    def find_note(self,* findstringlist, open_note=False, instance='default'):
+    def find_note(self, findstringlist, open_note=False, instance='default'):
+        """Find a note based on a list of strings.
+        
+        Keyword Arguments:
+            findstringlist -- list of strings to match with note names.
+            open_note -- boolean on whether to open the note found
+            instance -- qn instance on which to conduct the matching"""
 
         tmp_filelist = self.__file_repo[instance].filenames()[:]
         found_list = []
         for filen in tmp_filelist:
-            if all ( (fstring in filen) for fstring in findstringlist[0] ):
+            if all ( (fstring in filen) for fstring in findstringlist ):
                 if open_note:
                     found_list.append(filen)
                 else:
@@ -369,7 +444,6 @@ class QnApp ():
                 else:
                     print("Opening " + found_list[seln] + "...")
                     self.open_note(found_list[seln])
-
             elif found_num == 1:
                 print("Opening " + found_list[0] + "...")
                 self.open_note(found_list[0])
@@ -382,17 +456,23 @@ class QnApp ():
                 else:
                     print("Opening " + findstringlist[0][0] + "...")
                     self.new_note(findstringlist[0][0])
-
-
-    ## FILE MANAGEMENT METHODS
+        return(found_list)
 
     def move_note(self, name1, name2, dest1=None, dest2=None, move_tags=False):
+        """Move a note.
 
+        Keyword arguments:
+        name1 -- name of note to rename
+        name2 -- target name
+        dest1 -- path of original note
+        dest2 -- target path
+        move_tags -- move tags (not implemented)
+        """
         if dest1 is None:
-            dest1 = self.__QNDIR
+            dest1 = self.qndir
 
         if not dest2:
-            dest2 = self.__QNDIR
+            dest2 = self.qndir
 
         has_sp1 = False
         has_sp2 = False
@@ -454,75 +534,73 @@ class QnApp ():
 
         sys.exit(0)
 
-
     def delete_note(self, note):
+        """Delete a note by moving it to the trash."""
 
-
-        self.move_note(note, note, dest1=self.__QNDIR, dest2=self.__QNTRASH)
-
+        self.move_note(note, note, dest1=self.qndir, dest2=self.qntrash)
 
     def undelete_note(self, note):
+        """Undelete note by moving it from the trash"""
 
-
-        self.move_note(note, note, dest1=self.__QNTRASH, dest2=self.__QNDIR)
-
+        self.move_note(note, note, dest1=self.qntrash, dest2=self.qndir)
 
     def open_note(self, note):
+        """Open a note."""
 
-
-        inter = self.__options.interactive()
-        fulldir = os.path.join(self.__QNDIR, note)
+        inter = self.options.interactive
+        fulldir = os.path.join(self.qndir, note)
         if os.path.isfile(fulldir):
             #mime = file_mime_type(note).split("/")
             mime = file_mime_type_bash(fulldir).strip().split("/")
-            fulldir = os.path.join(self.__QNDIR, note).strip()
-            editor_command = self.__options.editor() + " '" + fulldir + "'"
+            fulldir = os.path.join(self.qndir, note).strip()
+            editor_command = self.options.editor + " '" + fulldir + "'"
 
             if (mime[0] == 'text' or mime[0] == 'None'):
                 if inter:
                     os.system(editor_command)
                 else:
-                    terminal_open(self.__options.terminal(), editor_command) 
-                    #os.system(self.__options.terminal() + " -e "
-                    #          + self.__options.editor() + " " + fulldir)
+                    terminal_open(self.options.terminal, editor_command) 
+                    #os.system(self.options.terminal + " -e "
+                    #          + self.options.editor + " " + fulldir)
             elif (mime[1] == 'x-empty'):
                 if inter:
                     os.system(editor_command)
                 else:
-                    terminal_open(self.__options.terminal(), editor_command) 
-                    #os.system(self.__options.terminal() + " -e " 
-                    #          + self.__options.editor() + " " + fulldir)
+                    terminal_open(self.options.terminal, editor_command) 
+                    #os.system(self.options.terminal + " -e " 
+                    #          + self.options.editor + " " + fulldir)
             else:
-                os.system(self.__options.launcher() + " " + fulldir)
+                os.system(self.options.launcher + " " + fulldir)
         else:
             print(fulldir + " is not a note")
             sys.exit(1)
 
 
     def new_note(self, note):
+        """Create a new note"""
 
-
-        inter = self.__options.interactive()
+        inter = self.options.interactive
         if '/' in note:
             note_dir = note.rsplit('/',1)[0]
             if not os.path.isdir(note_dir):
-                os.makedirs(os.path.join(self.__QNDIR, note_dir), exist_ok=True)
-        editor_command = self.__options.editor() + " '"
-        editor_command += os.path.join(self.__QNDIR, note).strip()
+                os.makedirs(os.path.join(self.qndir, note_dir), exist_ok=True)
+        editor_command = self.options.editor + " '"
+        editor_command += os.path.join(self.qndir, note).strip()
         editor_command += "'"
         if inter:
-            os.system(self.__options.editor() + " " 
-                        + os.path.join(self.__QNDIR, note))
+            os.system(self.options.editor + " " 
+                        + os.path.join(self.qndir, note))
         else:
-            terminal_open(self.__options.terminal(), editor_command, note)
-            #os.system(self.__options.terminal() + ' -e ' + self.__options.editor() 
-            #          + " " + os.path.join(self.__QNDIR, note))
+            terminal_open(self.options.terminal, editor_command, note)
+            #os.system(self.options.terminal + ' -e ' + self.options.editor 
+            #          + " " + os.path.join(self.__qndir, note))
         return(0)
 
 
     def force_new_note(self, note):
-        inter = self.__options.interactive()
-        filepath = os.path.join(self.__QNDIR, note.strip())
+        """Force create a new note"""
+        inter = self.options.interactive
+        filepath = os.path.join(self.qndir, note.strip())
         if os.path.isfile(filepath):
             self.open_note(note)
 
@@ -676,7 +754,7 @@ if __name__ == '__main__':
     ## Scan the directory of the file repository and sort it
     qn.file_repo().scan_files()
     qn.file_repo().sort('size', True)
-    print(qn.opts().print_options())
+    print(qn.options().print_options())
 
 #    qn.list_notes()
 #    grep = qn.file_repo().grep_files('world')

@@ -1,4 +1,7 @@
 __pycache__/*
+*.pyc
+*.pyo
 *.old
-qnr_modi.py
 rofi-timing.log
+qntest
+

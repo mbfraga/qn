@@ -1,23 +1,29 @@
 import os
 import sys
-from subprocess import Popen,PIPE, call
 import struct
-import config_parse
+from subprocess import Popen,PIPE, call
 
-import qn
-import hotkey_manager as hk
-
-
-COLS = 1
+import qn.hotkey_manager as hk
+import qn.qn as qn
 
 
 class QnAppRF(qn.QnApp):
+    """Class that has all the methods for the fzf and rofi interfaces"""
 
+    def run_launcher(self, entries, additional_args=[]):
+        """Runs the launcher (fzf/rofi) showing the entries, and applying any
+        additional arguments for the launcher.
 
-    def call_command(self, entries, additional_args=[]):
+        Keyword arguments:
+        entries -- list of entries to be shown in the launcher.
+        additional_args -- list of strings to be sent as command line arguments
+                           for the launcher.
 
-
-        proc = Popen(self.opts().command() + additional_args
+        Returns:
+            answer -- stdout of the launcher.
+            exit_code -- exit code returned by launcher.
+        """
+        proc = Popen(self.options.command + additional_args
                      , stdin=PIPE, stdout=PIPE)
         for e in entries:
             proc.stdin.write((e).encode('utf-8'))
@@ -29,17 +35,24 @@ class QnAppRF(qn.QnApp):
         if answer == '':
             return(None, exit_code)
 
-        if self.opts().app() == 'fzf':
+        if self.launcher == 'fzf':
             answer = answer.split('\x00')
         else:
             answer = answer.strip('\n').split(';')
 
-        return(answer, exit_code)
+        return(answer, int(exit_code))
 
 
-    def show_note_select(self, instance, additional_args=[]):
+    def show_note_selector(self, instance, additional_args=[]):
+        """Show notes in launcher
 
-        appname = self.opts().app()
+        Keyword arguments:
+        instance -- qn instance to show.
+        additiona_args -- list of any additional arguments to pass to the 
+                          launcher.
+        """
+
+        appname = self.launcher
         if appname == 'rofi':
             applist = self.file_repo(instance).lines()
         elif appname == 'fzf':
@@ -47,7 +60,7 @@ class QnAppRF(qn.QnApp):
         else:
             print("ERROR: appname '" + appname + "' not implemented")
 
-        proc = Popen(self.opts().command() + additional_args, stdin=PIPE
+        proc = Popen(self.options.command + additional_args, stdin=PIPE
                     , stdout=PIPE)
 
         for e in applist:
@@ -114,7 +127,7 @@ class QnAppRF(qn.QnApp):
         instance = 'default'
         if not self.hkman(instance):
             self.add_hkman(instance)
-            hkeys = self.opts().hotkeys()
+            hkeys = self.options.hotkeys
             self.hkman(instance).add_key(*hkeys['forcenew'])
             self.hkman(instance).add_key(*hkeys['delete'])
             self.hkman(instance).add_key(*hkeys['rename'])
@@ -129,16 +142,16 @@ class QnAppRF(qn.QnApp):
         hotkey_args = self.hkman(instance).generate_hotkey_args()
 
         if not self.file_repo(instance):
-            self.add_repo(self.opts().QNDIR(), instance)
+            self.add_repo(self.qndir, instance)
             self.file_repo(instance).scan_files()
 
-        self.file_repo(instance).sort(self.opts().sortby()
-                                    , self.opts().sortrev())
+        self.file_repo(instance).sort(self.options.sorttype
+                                    , self.options.sortrev)
 
-        MESG = 'Press "'  + self.opts().hotkeys()['showhelp'][1]
+        MESG = 'Press "'  + self.options.hotkeys['showhelp'][1]
         MESG += '" to see a list of hotkeys.'
-        if self.opts().help():
-            MESG += self.opts().help()
+        if self.options.help:
+            MESG += self.options.help
         MESG += ' Sorted by: ' + self.file_repo(instance).sorttype
 
         if self.file_repo(instance).sortrev:
@@ -146,10 +159,10 @@ class QnAppRF(qn.QnApp):
         else:
             MESG += ' [^]'
 
-        extra_args = self.opts().gen_instance_args(instance, alt_help=MESG)
+        extra_args = self.options.gen_instance_args(instance, alt_help=MESG)
         extra_args.extend(hotkey_args)
 
-        ANSWER = self.show_note_select(instance, extra_args)
+        ANSWER = self.show_note_selector(instance, extra_args)
         if not ANSWER:
             return(0)
 
@@ -162,7 +175,7 @@ class QnAppRF(qn.QnApp):
                 self.new_note(FILTER)
                 return(0)
             else:
-                path=os.path.join(self.opts().QNDIR(), NOTE)
+                path=os.path.join(self.qndir, NOTE)
                 print('path', path)
                 if os.path.isfile(path):
                     print("file found, editing...")
@@ -212,11 +225,11 @@ class QnAppRF(qn.QnApp):
 
 
     def show_sorted_default(self, sortby, default_sortrev=False):
-        if self.opts().sortby() == sortby:
-            self.opts().set_sortrev(not self.opts().sortrev())
+        if self.options.sorttype == sortby:
+            self.options.set_sortrev(not self.options.sortrev)
         else:
-            self.opts().set_sortrev(default_sortrev)
-        self.opts().set_sortby(sortby)
+            self.options.set_sortrev(default_sortrev)
+        self.options.set_sorttype(sortby)
         self.show_default()
 
 
@@ -227,11 +240,11 @@ class QnAppRF(qn.QnApp):
         HELP = "<span color=\"red\">"
         HELP += MESG
         HELP += "</span>"
-        appname = self.opts().app()
+        appname = self.launcher
 
-        extra_args = self.opts().gen_instance_args('default', alt_help=MESG
-                                          , alt_title=TITLE)
-        ANS, val = self.call_command(['no', 'yes'], extra_args)
+        extra_args = self.options.gen_instance_args('default', alt_help=MESG
+                                          , alt_prompt=TITLE)
+        ANS, val = self.run_launcher(['no', 'yes'], extra_args)
 
         if not ANS:
             sys.exit(0)
@@ -273,14 +286,14 @@ class QnAppRF(qn.QnApp):
 
         MESG = "Please write the new name for this file"
 
-        extra_args = self.opts().gen_instance_args('default'
-                                , alt_help=MESG, alt_title="qn rename: ")
-        if self.opts().app() == 'rofi':
+        extra_args = self.options.gen_instance_args('default'
+                                , alt_help=MESG, alt_prompt="qn rename: ")
+        if self.options.app() == 'rofi':
             extra_args.extend(['-filter', note])
-        elif self.opts().app() == 'fzf':
+        elif self.options.app() == 'fzf':
             extra_args.extend(['--query', note])
 
-        ANS, val = self.call_command([''], extra_args)
+        ANS, val = self.run_launcher([''], extra_args)
 
         if (ANS == None):
             sys.exit(1)
@@ -302,8 +315,8 @@ class QnAppRF(qn.QnApp):
         instance = 'trash'
         if not self.hkman(instance):
             self.add_hkman(instance)
-            self.hkman(instance).add_key(*self.opts().hotkeys()['showtrash'])
-            self.hkman(instance).add_key(*self.opts().hotkeys()['showhelp'])
+            self.hkman(instance).add_key(*self.options.hotkeys['showtrash'])
+            self.hkman(instance).add_key(*self.options.hotkeys['showhelp'])
         hotkey_args = self.hkman(instance).generate_hotkey_args()
 
         MESG = 'Press enter to restore file. "'
@@ -311,16 +324,16 @@ class QnAppRF(qn.QnApp):
         MESG += '" to go back to qn.'
 
         if not self.file_repo(instance):
-            self.add_repo(self.opts().QNTRASH(), instance)
+            self.add_repo(self.qntrash, instance)
             self.file_repo(instance).scan_files()
         self.file_repo(instance).sort('cdate')
         applist = self.file_repo(instance).filenames()
 
-        extra_args = self.opts().gen_instance_args('default'
-                                        , alt_help=MESG, alt_title='qn trash: ')
+        extra_args = self.options.gen_instance_args('default'
+                                        , alt_help=MESG, alt_prompt='qn trash: ')
         extra_args.extend(hotkey_args)
 
-        ANSWER = self.show_note_select(instance, extra_args)
+        ANSWER = self.show_note_selector(instance, extra_args)
         if not ANSWER:
             return(0)
         NOTE, FILTER, OPTSEL = ANSWER
@@ -339,7 +352,7 @@ class QnAppRF(qn.QnApp):
         instance='filtered'
         if not self.hkman(instance):
             self.add_hkman(instance)
-            self.hkman(instance).add_key(*self.opts().hotkeys()['grep'])
+            self.hkman(instance).add_key(*self.options.hotkeys['grep'])
         hotkey_args = self.hkman(instance).generate_hotkey_args()
 
 
@@ -348,8 +361,8 @@ class QnAppRF(qn.QnApp):
         MESG += "' to go back to qn."
         TITLE = 'qn search: '
 
-        extra_args = self.opts().gen_instance_args('default'
-                                        , alt_help=MESG, alt_title=TITLE)
+        extra_args = self.options.gen_instance_args('default'
+                                        , alt_help=MESG, alt_prompt=TITLE)
         extra_args.extend(hotkey_args)
 
 
@@ -365,7 +378,7 @@ class QnAppRF(qn.QnApp):
         self.add_existing_repo(filtered_repo, instance)
         self.file_repo(instance).set_lineformat(['name', 'misc'])
 
-        ANSWER = self.show_note_select(instance, extra_args)
+        ANSWER = self.show_note_selector(instance, extra_args)
 
         if not ANSWER:
             return(0)
@@ -380,7 +393,7 @@ class QnAppRF(qn.QnApp):
                 self.new_note(FILTER)
                 return(0)
             else:
-                path=os.path.join(self.opts().QNDIR(), NOTE)
+                path=os.path.join(self.qndir, NOTE)
                 if os.path.isfile(path):
                     print("file found, editing...")
                     self.open_note(NOTE)
@@ -403,22 +416,22 @@ class QnAppRF(qn.QnApp):
         instance = 'help'
         if not self.hkman(instance):
             self.add_hkman(instance)
-            self.hkman(instance).add_key(*self.opts().hotkeys()['showhelp'])
+            self.hkman(instance).add_key(*self.options.hotkeys['showhelp'])
         hotkey_args = self.hkman(instance).generate_hotkey_args()
 
 
-        MESG = "List of opts() and corresponding keybindings."
+        MESG = "List of options and corresponding keybindings."
         MESG += " Press '" + self.hkman(instance).get_keybinding('showhelp') 
         MESG += "' to go back to qn."
 
         TITLE = 'qn help: '
 
-        extra_args = self.opts().gen_instance_args('default'
-                                        , alt_help=MESG, alt_title=TITLE)
+        extra_args = self.options.gen_instance_args('default'
+                                        , alt_help=MESG, alt_prompt=TITLE)
         extra_args.extend(hotkey_args)
 
         help_lines = self.hkman('default').generate_help(enter_help)
-        ANSWER = self.call_command(help_lines, extra_args)
+        ANSWER = self.run_launcher(help_lines, extra_args)
 
         if not ANSWER:
             return(0)
@@ -426,13 +439,3 @@ class QnAppRF(qn.QnApp):
             sys.exit(0)
         else:
             self.show_default()
-
-
-
-if __name__ == '__main__':
-    qnopts = config_parse.QnOptions(run_parse_config=True)
-    qnopts.check_environment()
-
-    qnrf = QnAppRF(qnopts)
-    qnrf.show_default()
-

@@ -46,9 +46,10 @@ I will make the installation easier soon.
 
 1. git clone https://github.com/mbfraga/qn
 
-2. Copy sample config to ~/.config/qn/config and edit as necessary
+2. go to qn directory
 
-3. (For Rofi) create a file ~/bin/qnr that runs the python script qnr.py 
+3. sudo pip3 install ./
 
-4. (For fzf) create a file ~/bin/qnf that runs the python script qnf.py
+4. copy /etc/qn/config.example to ~/.config/qn/config
+
 

@@ -1,3 +1,6 @@
+"""Handle hotkeys for fzf and rofi"""
+
+
 IMPLEMENTED_APPS = ['rofi', 'fzf']
 class HotkeyManager:
     """Class that is able to store hotkeys which can be sent to rofi or fzf. It
@@ -8,10 +11,18 @@ class HotkeyManager:
         if app not in IMPLEMENTED_APPS:
             raise ValueError('App %r not implemented.' % (app))
         else:
-            self.app = app
+            self.__app = app
 
-        self.keys = []
+        self.__keys = []
         self.__hotkey_ct = 19
+
+    @property
+    def keys(self):
+        return(self.__keys)
+
+    @property
+    def launcher(self):
+        return(self.__app)
 
     def add_key(self, optname, keybinding, keyhelp=''):
         """Add a hotkey.
@@ -23,7 +34,7 @@ class HotkeyManager:
                    generate a nice list of hotkeys and what they do.
                    (default '')
         """
-        if self.app == 'rofi':
+        if self.__app == 'rofi':
             if self.__hotkey_ct < 1:
                 print('Too many keybindings. Key"' +  optname + '" not added.')
                 return(False)
@@ -32,29 +43,29 @@ class HotkeyManager:
         keyprops['keybinding'] = keybinding
         keyprops['keyhelp'] = keyhelp
         keyprops['keyval'] = self.__hotkey_ct+9
-        self.keys.append(keyprops)
-        if self.app == 'rofi':
+        self.__keys.append(keyprops)
+        if self.__app == 'rofi':
             self.__hotkey_ct -= 1
 
     def get_opt(self, val):
         """Get the optname of a hotkey from its value. Rofi and fzf generate
         different values.
         """
-        if self.app == 'rofi':
-            for key in self.keys:
+        if self.__app == 'rofi':
+            for key in self.__keys:
                 if val == key['keyval']:
                     return(key['optname'])
 
             print("No keybinding set to -kb-custom-" + str(val-9) + ".")
             return(None)
 
-        elif self.app == 'fzf':
-            for key in self.keys:
+        elif self.__app == 'fzf':
+            for key in self.__keys:
                 if val == key['keybinding']:
                     return(key['optname'])
 
     def get_keybinding(self, optname):
-        for key in self.keys:
+        for key in self.__keys:
             if key['optname'] == optname:
                 return key['keybinding']
         return(None)
@@ -63,16 +74,16 @@ class HotkeyManager:
         """Generate command line arguments for fzf or rofi, depending on what
         application is enabled."""
         hotkey_args = []
-        if self.app == 'rofi':
-            for key in self.keys:
+        if self.__app == 'rofi':
+            for key in self.__keys:
                 arg_string = '-kb-custom-' + str(key['keyval']-9)
                 hotkey_args.extend([arg_string, key['keybinding']])
             return(hotkey_args)
 
-        elif self.app == 'fzf':
+        elif self.__app == 'fzf':
             hotkey_args.append('--expect')
             keys_string = None
-            for key in self.keys:
+            for key in self.__keys:
                 if not keys_string:
                     keys_string = key['keybinding']
                 else:
@@ -92,7 +103,7 @@ class HotkeyManager:
             line = line.ljust(help_padding)
             line += 'Enter'
             help_lines.append(line)
-        for key in self.keys:
+        for key in self.__keys:
             line = ""
             line += key['keyhelp'] + ":"
             line = line.ljust(help_padding)

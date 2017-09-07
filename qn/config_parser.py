@@ -1,8 +1,11 @@
+"""Parse configuration for qn"""
+
 import os
 import sys
 from subprocess import Popen,PIPE, call
 import configargparse
-import hotkey_manager
+
+import qn.hotkey_manager
 
 
 # Globals
@@ -65,8 +68,10 @@ _DEFAULT_HOTKEYS['fzf'] = {
   }
 
 
-
-
+def cmd_exists(cmd):
+    """Check if a program exists in PATH. Linux only."""
+    return call("type " + cmd, shell=True, 
+        stdout=PIPE, stderr=PIPE) == 0
 
 
 class QnOptions():
@@ -92,15 +97,15 @@ class QnOptions():
         self.__qndata = None
         self.__qntrash = None
         self.__options = {}
-        self.__options['title_header'] = ''
-        self.__options['title_suffix'] = ''
+        self.__options['prompt_header'] = ''
+        self.__options['prompt_suffix'] = ''
         self.__options['terminal'] = None
         self.__options['editor'] = None
-        self.__options['launcher'] = None
+        self.__options['opener'] = None
         self.__options['help'] = None
-        self.__options['position'] = None
+        self.__options['selected_row'] = None
         self.__options['filter'] = None
-        self.__options['sortby'] = None
+        self.__options['sorttype'] = None
         self.__options['sortrev'] = None
         self.__options['command'] = None
         self.__options['command_extra'] = None
@@ -131,25 +136,25 @@ class QnOptions():
         self.__qndata = os.path.join(self.__qndir, '.qn')
         self.__qntrash = os.path.join(self.__qndata, 'trash')
 
-        self.__options['title_header'] = 'qn'
-        self.__options['title_suffix'] = ':'
+        self.__options['prompt_header'] = 'qn'
+        self.__options['prompt_suffix'] = ':'
 
 
         self.__options['terminal'] = _FALLBACK_TERMINAL 
         self.__options['editor'] = _FALLBACK_EDITOR
 
-        # Define application launcher
+        # Define file opener (
         if cmd_exists('rifle'):
-            self.__options['launcher'] = 'rifle'
+            self.__options['opener'] = 'rifle'
         else:
-            self.__options['launcher'] = 'xdg-open'
+            self.__options['opener'] = 'xdg-open'
 
         self.__options['help'] = None
 
-        self.__options['position'] = None
+        self.__options['selected_row'] = None
         self.__options['filter'] = None
 
-        self.__options['sortby'] = 'cdate'
+        self.__options['sorttype'] = 'cdate'
         self.__options['sortrev'] = False
 
 
@@ -159,101 +164,119 @@ class QnOptions():
 
         self.__options['hotkeys'] = _DEFAULT_HOTKEYS[self.__app]
 
+    @property
     def app(self):
         return(self.__app)
 
-    def title(self, subtext=''):
-        print(self.__options['title_header'])
-        return(self.__options['title_header'] + subtext
-                + self.__options['title_suffix'])
+    @property
+    def prompt(self, subtext=''):
+        print(self.__options['prompt_header'])
+        return(self.__options['prompt_header'] + subtext
+                + self.__options['prompt_suffix'])
 
+    @property
     def help(self):
         return(self.__options['help'])
 
-    def position(self):
-        return(self.__options['filter'])
+    @property
+    def selected_row(self):
+        return(self.__options['selected_row'])
 
+    @property
     def filter(self):
         return(self.__options['filter'])
 
+    @property
     def terminal(self):
         return(self.__options['terminal'])
 
+    @property
     def editor(self):
         return(self.__options['editor'])
 
-    def launcher(self):
-        return(self.__options['launcher'])
+    @property
+    def opener(self):
+        return(self.__options['opener'])
 
-    def sortby(self):
-        return(self.__options['sortby'])
+    @property
+    def sorttype(self):
+        return(self.__options['sorttype'])
     
+    @property
     def sortrev(self):
         return(self.__options['sortrev'])
 
+    @property
     def command(self):
         command = self.__options['command']
         if self.__options['command_extra']:
             command.extend(self.__options['command_extra'])
         return(command)
 
+    @property
     def interactive(self):
         return(self.__options['interactive'])
 
+    @property
     def hotkeys(self):
         return(self.__options['hotkeys'])
 
-    def QNDIR(self):
+    @property
+    def qndir(self):
         return(self.__qndir)
 
-    def QNDATA(self):
+    @property
+    def qndata(self):
         return(self.__qndata)
 
-    def QNTRASH(self):
+    @property
+    def qntrash(self):
         return(self.__qntrash)
 
+    def set_terminal(self, terminal):
+        self.__options['terminal'] = terminal
 
-    def set_title(self, title):
-        self.__options['title_header'] = title
+    def set_prompt(self, prompt):
+        self.__options['prompt_header'] = prompt
 
     def set_help(self, help_msg):
         self.__options['help'] = help_msg
 
-    def set_position(self, position):
-        self.__options['position'] = position
+    def set_selected_row(self, selected_row):
+        self.__options['selected_row'] = selected_row
 
     def set_filter(self, new_filter):
         self.__options['filter'] = new_filter
 
-    def set_sortby(self, sortby):
-        self.__options['sortby'] = sortby
+    def set_sorttype(self, sorttype):
+        self.__options['sorttype'] = sorttype
 
     def set_sortrev(self, sortrev):
         self.__options['sortrev'] = sortrev
 
     def set_interactive(self, interactive):
-        self.__interactive = interactive
+        self.__options['interactive'] = interactive
 
 
     def print_options(self):
         """Print options list. Usually for debugging."""
         print("Interface App   =", self.__app)
-        print("interactive     =", self.interactive())
+        print("interactive     =", self.interactive)
         print()
-        print("qndir           =", self.QNDIR())
-        print("qndata          =", self.QNDATA())
-        print("qntrash         =", self.QNTRASH())
+        print("qndir           =", self.qndir)
+        print("qndata          =", self.qndata)
+        print("qntrash         =", self.qntrash)
         print()
-        print("terminal        =", self.terminal())
-        print("editor          =", self.editor())
-        print("launcher        =", self.launcher())
+        print("terminal        =", self.terminal)
+        print("editor          =", self.editor)
+        print("opener          =", self.opener)
         print()
-        print("title           =", self.title())
-        print("help            =", self.help())
-        print("sortby          =", self.sortby())
-        print("sortrev         =", self.sortrev())
-        print("position        =", self.position())
-        print("filter          =", self.filter())
+        print("prompt          =", self.prompt)
+        print("help            =", self.help)
+        print("sorttype          =", self.sorttype)
+        print("sortrev         =", self.sortrev)
+        print("selected_row    =", self.selected_row)
+        print("filter          =", self.filter)
         print()
         print("command         =", self.__options['command'])
         print("command_extra   =", self.__options['command_extra'])
@@ -267,7 +290,9 @@ class QnOptions():
 
     def parse_config(self, argv=None): 
         """Parse config file and command line arguments."""
-        default_config_path_expanded = os.path.expanduser(_DEFAULT_CONFIG)
+        default_config_path = os.path.expanduser(_DEFAULT_CONFIG)
+        if not os.path.isfile(default_config_path):
+            default_config_path = os.path.abspath('/etc/qn/config.example')
         config_used=None
 
 #        options = argument_parser()
@@ -286,7 +311,7 @@ class QnOptions():
         p.add('-f', default=False, action='store_true', help='run as fzf')
         p.add('--interactive', default="default", help='if False, runs text editor' + 
                             ' from terminal (default/True/False)')
-        p.add('--sortby', default='cdate'
+        p.add('--sorttype', default='cdate'
                 , help='type of default sorting (cdate, mdate, name, size)')
         p.add('--sortrev', default=False, help='reverse sorting (True/False)')
         p.add('--rofi-settings', default=False
@@ -316,17 +341,16 @@ class QnOptions():
         else:
             options = p.parse_args()
 
-
-        if not os.path.isfile(default_config_path_expanded):
+        if not os.path.isfile(default_config_path):
             if not options.config:
                 print("Default config file not found at " 
-                        + default_config_path_expanded + ", and no config file"
+                        + default_config_path + ", and no config file"
                         + " defined via -c.\n")
                 config_used = 'defaults'
             else:
                 config_used = options.config
         else:
-            config_used = default_config_path_expanded
+            config_used = default_config_path
 
         # Check that in
         if options.default_interface not in _IMPLEMENTED_APPS:
@@ -424,19 +448,19 @@ class QnOptions():
         else:
             self.__options['editor'] = options.text_editor
 
-        # Define application launcher
+        # Define file opener
         if cmd_exists('rifle'):
-            self.__options['launcher'] = 'rifle'
+            self.__options['opener'] = 'rifle'
         else:
-            self.__options['launcher'] = 'xdg-open'
+            self.__options['opener'] = 'xdg-open'
 
 
-        if options.sortby not in _SORT_OPTS:
+        if options.sorttype not in _SORT_OPTS:
             print("WARNING with config '" + config_used + "': sorty option, "
-                    + options.sortby + " is not valid. Using cdate")
-            self.__options['sortby'] = 'cdate'
+                    + options.sorttype + " is not valid. Using cdate")
+            self.__options['sorttype'] = 'cdate'
         else:
-            self.__options['sortby'] = options.sortby
+            self.__options['sorttype'] = options.sorttype
 
         self.__options['sortrev'] = (options.sortrev == 'True')
 
@@ -446,32 +470,32 @@ class QnOptions():
         there.
         """
         # This needs to be more robust
-        QNDIR = self.QNDIR()
-        QNDATA = self.QNDATA()
-        QNTRASH = self.QNTRASH()
+        qndir = self.qndir
+        qndata = self.qndata
+        qntrash = self.qntrash
         # Make sure everything is ready for qn
-        if os.path.exists(QNDIR):
-            if os.path.isfile(QNDIR):
-                print("ERROR: path '" + QNDIR 
+        if os.path.exists(qndir):
+            if os.path.isfile(qndir):
+                print("ERROR: path '" + qndir 
                         + "' exists but is a file. Exiting...")
                 sys.exit(1)
         else:
-            HELP_MSG = " Do you want to create the qn directory: " + QNDIR + "?"
+            HELP_MSG = " Do you want to create the qn directory: " + qndir + "?"
 
             s = input(HELP_MSG + " (y/N) ")
             if s and (s[0] == "Y" or s[0] == "y"):
-                print("Creating directory: " + QNDIR + "...")
-                os.makedirs(QNDIR)
+                print("Creating directory: " + qndir + "...")
+                os.makedirs(qndir)
             else:
-                print("qn directory" + QNDIR + " does not exist. Exiting...")
+                print("qn directory" + qndir + " does not exist. Exiting...")
                 sys.exit(1)
 
-        if not os.path.exists(QNDATA):
-            print("Creating directory: " + QNDATA + "...")
-            os.makedirs(QNDATA, exist_ok=True)
-        if not os.path.exists(QNTRASH):
-            print("Creating directory: " + QNTRASH + "...")
-            os.makedirs(QNTRASH, exist_ok=True)
+        if not os.path.exists(qndata):
+            print("Creating directory: " + qndata + "...")
+            os.makedirs(qndata, exist_ok=True)
+        if not os.path.exists(qntrash):
+            print("Creating directory: " + qntrash + "...")
+            os.makedirs(qntrash, exist_ok=True)
         # FOR TAGS
         #if not os.path.isfile(_TAGF_PATH):
         #    tagfile = open(_TAGF_PATH, 'wb')
@@ -480,22 +504,22 @@ class QnOptions():
 
 
     def gen_instance_args(self, instance, alt_help=None
-                                    , alt_title=None):
+                                    , alt_prompt=None):
         """Generate CLI arguments for fzf or rofi.
         Keyword arguments:
         alt_help -- string that will be used as an alternative help message for
                     the instance (default None).
-        alt_title -- string that will be used as an alternative prompt for the
+        alt_prompt -- string that will be used as an alternative prompt for the
                     instance (default None).
         """
         if alt_help is not None:
             helpn = alt_help
         else:
-            helpn = self.help()
-        if alt_title is not None:
-            titlen = alt_title
+            helpn = self.help
+        if alt_prompt is not None:
+            promptn = alt_prompt
         else:
-            titlen = self.title()
+            promptn = self.prompt
 
         appname = self.__app
         arguments = []
@@ -503,28 +527,16 @@ class QnOptions():
             if appname == 'rofi':
                 arguments.extend(['-mesg', helpn
                                 , '-format', 'f;s;i'
-                                ,'-p', titlen])
-                if self.filter():
-                    arguments.extend(['-filter', self.filter()])
-                if self.position():
-                    arguments.extend(['-selected-row', self.position()])
+                                ,'-p', promptn])
+                if self.filter:
+                    arguments.extend(['-filter', self.filter])
+                if self.selected_row:
+                    arguments.extend(['-selected-row', self.selected_row])
 
             elif appname == 'fzf':
                 arguments.extend(['--header', helpn
-                                ,'--prompt', titlen])
-                if self.filter():
-                    arguments.extend(['-filter', self.filter()])
+                                ,'--prompt', promptn])
+                if self.filter:
+                    arguments.extend(['-filter', self.filter])
 
         return(arguments)
-
-
-def cmd_exists(cmd):
-    """Check if a program exists in PATH. Linux only."""
-    return call("type " + cmd, shell=True, 
-        stdout=PIPE, stderr=PIPE) == 0
-
-
-if __name__ == '__main__':
-    qno = QnOptions(run_parse_config=True)
-    print(qno.print_options())
-

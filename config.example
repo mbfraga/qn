@@ -1,14 +1,15 @@
-default-interface=rofi
+# Configuration for qn
+#default-interface=rofi
 qndir=~/quicknotes
 
-sortby=cdate
+sorttype=cdate
 sortrev=False
 
-terminal=urxvt
-text-editor=vim
+#terminal=urxvt
+#text-editor=vim
 
 # If using something like gedit, set interactive to True
-interactive = default # default/True/False
+#interactive = default # default/True/False
 
 #rofi-settings =  -width 55 -lines 15
 #fzf-settings  = 
