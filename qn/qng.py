@@ -288,9 +288,9 @@ class QnAppRF(qn.QnApp):
 
         extra_args = self.options.gen_instance_args('default'
                                 , alt_help=MESG, alt_prompt="qn rename: ")
-        if self.options.app() == 'rofi':
+        if self.options.app == 'rofi':
             extra_args.extend(['-filter', note])
-        elif self.options.app() == 'fzf':
+        elif self.options.app == 'fzf':
             extra_args.extend(['--query', note])
 
         ANS, val = self.run_launcher([''], extra_args)
