@@ -6,6 +6,11 @@ from subprocess import Popen,PIPE, call
 import qn.hotkey_manager as hk
 import qn.qn as qn
 
+def rofi_warn(message):
+    """Display simple message string via rofi."""
+    proc = Popen(['rofi', '-e', message])
+    proc.communicate()
+
 
 class QnAppRF(qn.QnApp):
     """Class that has all the methods for the fzf and rofi interfaces"""
@@ -374,6 +379,11 @@ class QnAppRF(qn.QnApp):
             self.show_default()
         for f in filters:
             filtered_repo = filtered_repo.grep_files(f)
+            if not filtered_repo:
+                rofi_warn("No matches found for filters: " 
+                        + "".join(f + "," for f in filters))
+                self.show_default()
+                return(0)
 
         self.add_existing_repo(filtered_repo, instance)
         self.file_repo(instance).set_lineformat(['name', 'misc'])
