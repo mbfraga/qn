@@ -22,6 +22,3 @@ qnoptions.check_environment()
 
 qnrf = qng.QnAppRF(qnoptions)
 qnrf.show_default()
-
-
-

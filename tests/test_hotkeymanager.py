@@ -17,7 +17,7 @@ locale.setlocale(locale.LC_ALL, locale.getlocale())
 from qn import hotkey_manager
 
 
-qnhk =  hotkey_manager.HotkeyManager()
+qnhk = hotkey_manager.HotkeyManager()
 qnhk.add_key('run', 'alt-r', 'run a command')
 qnhk.add_key('open', 'alt-o')
 print("* self.__keys")

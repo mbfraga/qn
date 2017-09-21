@@ -2,53 +2,48 @@
 
 import os
 import sys
-from subprocess import Popen,PIPE, call
 import configargparse
-
-import qn.hotkey_manager
-
+from subprocess import PIPE, call
 
 # Globals
-#_TAGF_PATH = os.path.join(_QNDATA, 'tags.pickle')
+# _TAGF_PATH = os.path.join(_QNDATA, 'tags.pickle')
 _DEFAULT_QNDIR = '~/qn/'
 _FALLBACK_TERMINAL = 'xterm'
 _FALLBACK_EDITOR = 'vi'
 
 _IMPLEMENTED_APPS = ('rofi', 'fzf')
 _SORT_OPTS = ('cdate', 'mdate', 'name', 'size')
-_HOTKEY_COMMANDS = ('forcenew', 'rename', 'delete', 'grep', 'showtrash'
-                    ,'showhelp', 'sortcdate', 'sortname', 'sortmdate'
-                    , 'sortsize')
+_HOTKEY_COMMANDS = ('forcenew', 'rename', 'delete', 'grep', 'showtrash',
+                    'showhelp', 'sortcdate', 'sortname', 'sortmdate',
+                    'sortsize')
 
-_INTERACTIVE={'rofi':False, 'fzf':True}
-_DEFAULT_CONFIG='~/.config/qn/config'
+_INTERACTIVE = {'rofi': False, 'fzf': True}
+_DEFAULT_CONFIG = '~/.config/qn/config'
 _DEFAULT_COMMAND = {}
-_DEFAULT_COMMAND['rofi'] = ['rofi', '-sep', '\\0', '-columns', '1'
-                , '-dmenu', '-i'
-                , '-kb-custom-1', 'Alt+Shift+1' #remove previous bindings
-                , '-kb-custom-2', 'Alt+Shift+2' #remove previous bindings
-                , '-kb-custom-3', 'Alt+Shift+3' #remove previous bindings
-                , '-kb-custom-4', 'Alt+Shift+4' #remove previous bindings
-                ]
-_DEFAULT_COMMAND['fzf'] = ['fzf'
-                   ,'--read0'
-                   ,'--print-query'
-                   ,'--print0'
-                   ,'--exact'
-                   ,'--expect', 'alt-t'
-                ]
+_DEFAULT_COMMAND['rofi'] = ['rofi', '-sep', '\\0', '-columns', '1',
+                            '-dmenu', '-i',
+                            '-kb-custom-1', 'Alt+Shift+1',
+                            '-kb-custom-2', 'Alt+Shift+2',
+                            '-kb-custom-3', 'Alt+Shift+3',
+                            '-kb-custom-4', 'Alt+Shift+4']
+_DEFAULT_COMMAND['fzf'] = ['fzf',
+                           '--read0',
+                           '--print-query',
+                           '--print0',
+                           '--exact',
+                           '--expect', 'alt-t']
 _DEFAULT_HOTKEYS = {}
 _DEFAULT_HOTKEYS['rofi'] = {
-  'forcenew'  :['forcenew'  ,'Alt-Return' , 'Force Create New Note'],
-  'delete'    :['delete'    ,'Alt-d'      , 'Delete Note'],
-  'rename'    :['rename'    ,'Alt-space'  , 'Rename Note'],
-  'grep'      :['grep'      ,'Alt-s'      , 'Grep Notes'],
-  'showtrash' :['showtrash' ,'Alt-t'      , 'Show Trash'],
-  'showhelp'  :['showhelp'  ,'Alt-h'      , 'Show Help'],
-  'sortcdate' :['sortcdate' ,'Alt-2'      , 'Sort by Creation Date'],
-  'sortname'  :['sortname'  ,'Alt-1'      , 'Sort By Name'],
-  'sortmdate' :['sortmdate' ,'Alt-3'      , 'Sort by Modificatin Date'],
-  'sortsize'  :['sortsize'  ,'Alt-4'      , 'Sort by Size'],
+  'forcenew'  : ['forcenew'   , 'Alt-Return' , 'Force Create New Note']   ,
+  'delete'    : ['delete'       , 'Alt-d'      , 'Delete Note']           ,
+  'rename'    : ['rename'       , 'Alt-space'  , 'Rename Note']           ,
+  'grep'      : ['grep'           , 'Alt-s'      , 'Grep Notes']          ,
+  'showtrash' : ['showtrash' , 'Alt-t'      , 'Show Trash']               ,
+  'showhelp'  : ['showhelp'   , 'Alt-h'      , 'Show Help']               ,
+  'sortcdate' : ['sortcdate' , 'Alt-2'      , 'Sort by Creation Date']    ,
+  'sortname'  : ['sortname'   , 'Alt-1'      , 'Sort By Name']            ,
+  'sortmdate' : ['sortmdate' , 'Alt-3'      , 'Sort by Modificatin Date'] ,
+  'sortsize'  : ['sortsize'   , 'Alt-4'      , 'Sort by Size']            ,
   }
 
 _DEFAULT_HOTKEYS['fzf'] = {
@@ -70,8 +65,7 @@ _DEFAULT_HOTKEYS['fzf'] = {
 
 def cmd_exists(cmd):
     """Check if a program exists in PATH. Linux only."""
-    return call("type " + cmd, shell=True, 
-        stdout=PIPE, stderr=PIPE) == 0
+    return(call("type " + cmd, shell=True, stdout=PIPE, stderr=PIPE) == 0)
 
 
 class QnOptions():
@@ -81,14 +75,14 @@ class QnOptions():
     Keyword arguments:
         app -- launcher application name, 'rofi' or 'fzf' (default None).
         qndir -- path to the directory holding the notes (default None).
-        run_parse_config -- whether or not to parse config file and command 
+        run_parse_config -- whether or not to parse config file and command
                             line arguments when class is initialized. This can
                             be done later. (default False)
         config_file_only -- only parse config file, everything else will be set
                             to defaults. (default False)
     """
-    def __init__(self, app=None, qndir=None, run_parse_config = False, 
-                 config_file_only = False):
+    def __init__(self, app=None, qndir=None, run_parse_config=False,
+                 config_file_only=False):
 
         self.config_file_only = config_file_only
         self.__app = None
@@ -126,8 +120,8 @@ class QnOptions():
             self.__app = 'rofi'
 
         if self.__app not in _IMPLEMENTED_APPS:
-            print("Error: interface application, " + app 
-                    + "not implemented.")
+            print("Error: interface application, " + self.__app +
+                  "not implemented.")
             sys.exit(1)
 
         if not self.__qndir:
@@ -139,8 +133,7 @@ class QnOptions():
         self.__options['prompt_header'] = 'qn'
         self.__options['prompt_suffix'] = ':'
 
-
-        self.__options['terminal'] = _FALLBACK_TERMINAL 
+        self.__options['terminal'] = _FALLBACK_TERMINAL
         self.__options['editor'] = _FALLBACK_EDITOR
 
         # Define file opener (
@@ -157,8 +150,6 @@ class QnOptions():
         self.__options['sorttype'] = 'cdate'
         self.__options['sortrev'] = False
 
-
-
         self.__options['command'] = _DEFAULT_COMMAND[self.__app]
         self.__options['interactive'] = _INTERACTIVE[self.__app]
 
@@ -171,8 +162,8 @@ class QnOptions():
     @property
     def prompt(self, subtext=''):
         print(self.__options['prompt_header'])
-        return(self.__options['prompt_header'] + subtext
-                + self.__options['prompt_suffix'])
+        return(self.__options['prompt_header'] + subtext +
+               self.__options['prompt_suffix'])
 
     @property
     def help(self):
@@ -201,7 +192,7 @@ class QnOptions():
     @property
     def sorttype(self):
         return(self.__options['sorttype'])
-    
+
     @property
     def sortrev(self):
         return(self.__options['sortrev'])
@@ -257,7 +248,6 @@ class QnOptions():
     def set_interactive(self, interactive):
         self.__options['interactive'] = interactive
 
-
     def print_options(self):
         """Print options list. Usually for debugging."""
         print("Interface App   =", self.__app)
@@ -284,57 +274,60 @@ class QnOptions():
         print("keyboard        = ...")
 
         print("    " + "".ljust(12) + "[command, keybinding, help]")
-        for key,value in self.__options['hotkeys'].items():
+        for key, value in self.__options['hotkeys'].items():
             print("    " + str(key).ljust(12) + "" + str(value))
 
-
-    def parse_config(self, argv=None): 
+    def parse_config(self, argv=None):
         """Parse config file and command line arguments."""
         default_config_path = os.path.expanduser(_DEFAULT_CONFIG)
         if not os.path.isfile(default_config_path):
             default_config_path = os.path.abspath('/etc/qn/config.example')
-        config_used=None
+        config_used = None
 
 #        options = argument_parser()
 
         p = configargparse.ArgParser(default_config_files=[_DEFAULT_CONFIG])
-        p.add('-c', '--config', is_config_file=True
-                , help='config file path')
+        p.add('-c', '--config', is_config_file=True,
+              help='config file path')
         p.add('-d', '--qndir', default='~/qn/', help='qn directory path')
-        p.add('--terminal', default=_FALLBACK_TERMINAL
-                , help='default terminal to use')
-        p.add('--text-editor', default=_FALLBACK_EDITOR
-                , help='default text editor to use')
-        p.add('--default-interface', default='rofi'
-                , help='default interface (rofi/fzf) to use')
+        p.add('--terminal', default=_FALLBACK_TERMINAL,
+              help='default terminal to use')
+        p.add('--text-editor', default=_FALLBACK_EDITOR,
+              help='default text editor to use')
+        p.add('--default-interface', default='rofi',
+              help='default interface (rofi/fzf) to use')
         p.add('-r', default=False, action='store_true', help='run as rofi')
         p.add('-f', default=False, action='store_true', help='run as fzf')
-        p.add('--interactive', default="default", help='if False, runs text editor' + 
-                            ' from terminal (default/True/False)')
-        p.add('--sorttype', default='cdate'
-                , help='type of default sorting (cdate, mdate, name, size)')
+        p.add('--interactive', default="default",
+              help='if False, runs text editor' +
+              ' from terminal (default/True/False)')
+        p.add('--sorttype', default='cdate',
+              help='type of default sorting (cdate, mdate, name, size)')
         p.add('--sortrev', default=False, help='reverse sorting (True/False)')
-        p.add('--rofi-settings', default=False
-                , help="rofi settings to append. Format as: '-width 1 -lines 15'"
-                    + ", surround by '( )' if using command line argument"
-                    + ". In config, exclude quotes.")
-        p.add('--rofi-custom-command', default=False
-                , help="define path to rofi command to use. e.g., /usr/bin/rofi")
-        p.add('--fzf-custom-command', default=False
-                , help="define path to fzf command to use. e.g., /usr/bin/fzf")
-        p.add('--fzf-settings', default=False
-                , help="rofi settings to append. Format as: '--height=100; --border'"
-                    + ", surround by '( )' if using command line argument"
-                    + ". In config, exclude quotes.")
+        p.add('--rofi-settings', default=False,
+              help="rofi settings to append. Format as: '-width 1 -lines 15'" +
+                   ", surround by '( )' if using command line argument" +
+                   ". In config, exclude quotes.")
+        p.add('--rofi-custom-command', default=False,
+              help="define path to rofi command to use. e.g., /usr/bin/rofi")
+        p.add('--fzf-custom-command', default=False,
+              help="define path to fzf command to use. e.g., /usr/bin/fzf")
+        p.add('--fzf-settings', default=False,
+              help="rofi settings to append. Format as: '--height=100;" +
+                   " --border'" +
+                   ", surround by '( )' if using command line argument" +
+                   ". In config, exclude quotes.")
         # Need to improve formatting on this...but not sure how
-        p.add('--rofi-keybindings', default=False, help="define keybindings. Format as:"
-                    + " command=keybinding; e.g., forcenew=alt-Return;rename=alt-space."
-                    + " Possible commands: forcenew,rename,delete,grep,showtrash"
-                    + " ,showhelp,sortcdate,sortname,sortmdate,sortsize")
-        p.add('--fzf-keybindings', default=False, help="define keybindings. Format as:"
-                    + " command=keybinding; e.g., forcenew=alt-Return;rename=alt-space."
-                    + " Possible commands: forcenew,rename,delete,grep,showtrash"
-                    + " ,showhelp,sortcdate,sortname,sortmdate,sortsize")
+        p.add('--rofi-keybindings', default=False, help="define keybindings." +
+              " Format as: command=keybinding;" +
+              " e.g., forcenew=alt-Return;rename=alt-space." +
+              " Possible commands: forcenew,rename,delete,grep,showtrash"
+              " ,showhelp,sortcdate,sortname,sortmdate,sortsize")
+        p.add('--fzf-keybindings', default=False, help="define keybindings." +
+              " Format as: command=keybinding;" +
+              " e.g., forcenew=alt-Return;rename=alt-space." +
+              " Possible commands: forcenew,rename,delete,grep,showtrash" +
+              " ,showhelp,sortcdate,sortname,sortmdate,sortsize")
 
         if self.config_file_only:
             options = p.parse_known_args()[0]
@@ -343,9 +336,9 @@ class QnOptions():
 
         if not os.path.isfile(default_config_path):
             if not options.config:
-                print("Default config file not found at " 
-                        + default_config_path + ", and no config file"
-                        + " defined via -c.\n")
+                print("Default config file not found at " +
+                      default_config_path + ", and no config file" +
+                      " defined via -c.\n")
                 config_used = 'defaults'
             else:
                 config_used = options.config
@@ -354,8 +347,9 @@ class QnOptions():
 
         # Check that in
         if options.default_interface not in _IMPLEMENTED_APPS:
-            print("ERROR with config '" + config_used + "': default interface, " 
-                + options.default_interface + " not implemented.")
+            print("ERROR with config '" + config_used +
+                  "': default interface, " + options.default_interface +
+                  " not implemented.")
             sys.exit(1)
 
         if options.r:
@@ -378,10 +372,8 @@ class QnOptions():
 
         if options.rofi_custom_command and self.__app == 'rofi':
             self.__options['command'][0] = options.rofi_custom_command
-        if options.fzf_custom_command  and self.__app == 'fzf':
+        if options.fzf_custom_command and self.__app == 'fzf':
             self.__options['command'][0] = options.fzf_custom_command
-
-
 
         self.__qndir = os.path.expanduser(options.qndir)
         self.__qndata = os.path.join(self.__qndir, '.qn')
@@ -422,7 +414,7 @@ class QnOptions():
         if keybindings_extra:
             for binding in keybindings_extra.split(';'):
                 try:
-                    commb,keyb = binding.split('=')
+                    commb, keyb = binding.split('=')
                 except ValueError:
                     print("ERROR: Invalid binding '" + binding + "'.")
                     print("Use 'command;binding' syntax")
@@ -431,19 +423,18 @@ class QnOptions():
 
                 self.__options['hotkeys'][commb][1] = keyb
 
-
-
         # Check if command used for terminal and text editors exist
         if not cmd_exists(options.terminal):
-            print("WARNING with config '" + config_used + "': terminal app, "
-                    + options.terminal + " is not installed. Using default.")
+            print("WARNING with config '" + config_used + "': terminal app, " +
+                  options.terminal + " is not installed. Using default.")
             self.__options['terminal'] = _FALLBACK_TERMINAL
         else:
             self.__options['terminal'] = options.terminal
 
         if not cmd_exists(options.text_editor):
-            print("WARNING with config '" + config_used + "': text editor app, "
-                    + options.text_editor + " is not installed. Using default.")
+            print("WARNING with config '" + config_used +
+                  "': text editor app, " +
+                  options.text_editor + " is not installed. Using default.")
             self.__options['editor'] = _FALLBACK_EDITOR
         else:
             self.__options['editor'] = options.text_editor
@@ -454,16 +445,14 @@ class QnOptions():
         else:
             self.__options['opener'] = 'xdg-open'
 
-
         if options.sorttype not in _SORT_OPTS:
-            print("WARNING with config '" + config_used + "': sorty option, "
-                    + options.sorttype + " is not valid. Using cdate")
+            print("WARNING with config '" + config_used + "': sorty option, " +
+                  options.sorttype + " is not valid. Using cdate")
             self.__options['sorttype'] = 'cdate'
         else:
             self.__options['sorttype'] = options.sorttype
 
         self.__options['sortrev'] = (options.sortrev == 'True')
-
 
     def check_environment(self):
         """Check environment to make sure that everything needed for qn is
@@ -476,11 +465,12 @@ class QnOptions():
         # Make sure everything is ready for qn
         if os.path.exists(qndir):
             if os.path.isfile(qndir):
-                print("ERROR: path '" + qndir 
-                        + "' exists but is a file. Exiting...")
+                print("ERROR: path '" + qndir +
+                      "' exists but is a file. Exiting...")
                 sys.exit(1)
         else:
-            HELP_MSG = " Do you want to create the qn directory: " + qndir + "?"
+            HELP_MSG = " Do you want to create the qn directory: " + qndir
+            HELP_MSG += "?"
 
             s = input(HELP_MSG + " (y/N) ")
             if s and (s[0] == "Y" or s[0] == "y"):
@@ -497,14 +487,13 @@ class QnOptions():
             print("Creating directory: " + qntrash + "...")
             os.makedirs(qntrash, exist_ok=True)
         # FOR TAGS
-        #if not os.path.isfile(_TAGF_PATH):
-        #    tagfile = open(_TAGF_PATH, 'wb')
-        #    pickle.dump({'__taglist':[]}, tagfile)
-        #    tagfile.close()
+        # if not os.path.isfile(_TAGF_PATH):
+        #     tagfile = open(_TAGF_PATH, 'wb')
+        #     pickle.dump({'__taglist':[]}, tagfile)
+        #     tagfile.close()
 
-
-    def gen_instance_args(self, instance, alt_help=None
-                                    , alt_prompt=None):
+    def gen_instance_args(self, instance, alt_help=None,
+                          alt_prompt=None):
         """Generate CLI arguments for fzf or rofi.
         Keyword arguments:
         alt_help -- string that will be used as an alternative help message for
@@ -525,17 +514,17 @@ class QnOptions():
         arguments = []
         if instance == 'default':
             if appname == 'rofi':
-                arguments.extend(['-mesg', helpn
-                                , '-format', 'f;s;i'
-                                ,'-p', promptn])
+                arguments.extend(['-mesg', helpn,
+                                  '-format', 'f;s;i',
+                                  '-p', promptn])
                 if self.filter:
                     arguments.extend(['-filter', self.filter])
                 if self.selected_row:
                     arguments.extend(['-selected-row', self.selected_row])
 
             elif appname == 'fzf':
-                arguments.extend(['--header', helpn
-                                ,'--prompt', promptn])
+                arguments.extend(['--header', helpn,
+                                  '--prompt', promptn])
                 if self.filter:
                     arguments.extend(['-filter', self.filter])
 

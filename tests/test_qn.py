@@ -17,7 +17,7 @@ locale.setlocale(locale.LC_ALL, locale.getlocale())
 from qn import config_parser
 from qn import qn
 
-qno = config_parser.QnOptions(qndir='qntest', run_parse_config = False)
+qno = config_parser.QnOptions(qndir='qntest', run_parse_config=False)
 qno.check_environment()
 qno.set_interactive(False)
 q = qn.QnApp(qno)

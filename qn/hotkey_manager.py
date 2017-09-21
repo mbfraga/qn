@@ -2,6 +2,8 @@
 
 
 IMPLEMENTED_APPS = ['rofi', 'fzf']
+
+
 class HotkeyManager:
     """Class that is able to store hotkeys which can be sent to rofi or fzf. It
     helps handle hotkeys for both applications to be used in the same script
@@ -36,7 +38,7 @@ class HotkeyManager:
         """
         if self.__app == 'rofi':
             if self.__hotkey_ct < 1:
-                print('Too many keybindings. Key"' +  optname + '" not added.')
+                print('Too many keybindings. Key"' + optname + '" not added.')
                 return(False)
         keyprops = {}
         keyprops['optname'] = optname
@@ -93,7 +95,7 @@ class HotkeyManager:
 
     def generate_help(self, enter_help=None):
         """Generate a list of help strings, each corresponding to a hotkey. The
-        enter_help keyword argument can be used to set a help entry for the 
+        enter_help keyword argument can be used to set a help entry for the
         "Enter" (or "Return") key.
         """
         help_padding = 35
@@ -107,8 +109,7 @@ class HotkeyManager:
             line = ""
             line += key['keyhelp'] + ":"
             line = line.ljust(help_padding)
-            line +=  key['keybinding']
+            line += key['keybinding']
             help_lines.append(line)
 
         return(help_lines)
-
