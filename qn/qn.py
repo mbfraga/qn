@@ -39,14 +39,17 @@ def file_mime_type(filename):
 
 
 def file_mime_type_bash(filepath): # This is more reliable it seems...
-        proc = Popen(['xdg-mime', 'query', 'filetype', filepath]
-                     , stdout=PIPE)
-        mtype = proc.stdout.read().decode('utf-8')
-        exit_code = proc.wait()
-        if not mtype:
-            mtype = 'None/None'
 
-        return(mtype)
+    if not cmd_exists('xdg-mime'):
+        file_mime_type(filepath)
+    proc = Popen(['xdg-mime', 'query', 'filetype', filepath]
+                    , stdout=PIPE)
+    mtype = proc.stdout.read().decode('utf-8')
+    exit_code = proc.wait()
+    if not mtype:
+        mtype = 'None/None'
+
+    return(mtype)
 
 
 def terminal_open(terminal, command, title=None):

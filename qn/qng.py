@@ -373,7 +373,7 @@ class QnAppRF(qn.QnApp):
         if not FILTER:
             self.show_default()
         for f in filters:
-            filtered_repo = file_repo.grep_files(f)
+            filtered_repo = filtered_repo.grep_files(f)
 
         self.add_existing_repo(filtered_repo, instance)
         self.file_repo(instance).set_lineformat(['name', 'misc'])
@@ -383,7 +383,6 @@ class QnAppRF(qn.QnApp):
         if not ANSWER:
             return(0)
 
-        print(ANSWER)
         NOTE, FILTER, OPTSEL = ANSWER
 
 
@@ -408,7 +407,7 @@ class QnAppRF(qn.QnApp):
             if not FILTER:
                 self.show_default()
             else:
-                self.show_filtered(FILTER)
+                self.show_filtered(filtered_repo, FILTER)
 
 
     def show_help(self, enter_help):
