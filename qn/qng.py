@@ -8,12 +8,6 @@ import struct
 from subprocess import Popen, PIPE
 
 
-def rofi_warn(message):
-    """Display simple message string via rofi."""
-    proc = Popen(['rofi', '-e', message])
-    proc.communicate()
-
-
 class QnAppRF(qn.QnApp):
     """Class that has all the methods for the fzf and rofi interfaces"""
 
@@ -338,7 +332,7 @@ class QnAppRF(qn.QnApp):
         if OPTSEL == 'showtrash':
             self.show_default()
 
-    def show_filtered(self, file_repo, FILTER):
+    def show_filtered(self, file_repo, FILTER, use_grep=False):
 
         instance = 'filtered'
         if not self.hkman(instance):
@@ -356,17 +350,29 @@ class QnAppRF(qn.QnApp):
         extra_args.extend(hotkey_args)
 
         filters = FILTER.strip().split(" ")
-        filtered_repo = file_repo
 
         if not FILTER:
             self.show_default()
-        for f in filters:
-            filtered_repo = filtered_repo.grep_files(f)
-            if not filtered_repo:
-                rofi_warn("No matches found for filters: " +
-                          "".join(f + "," for f in filters))
+
+        if use_grep:
+            filtered_repo = file_repo
+            for f in filters:
+                filtered_repo = filtered_repo.grep_files(f)
+                if not filtered_repo:
+                    self.show_warning("No matches found for filters: " +
+                                      "".join(f + ", " for f in filters)[:-2] +
+                                      ". Press Enter to go back")
+                    self.show_default()
+                    return(0)
+        else:
+            filtered_repo = file_repo.search_files(filters)
+            if filtered_repo is None:
+                self.show_warning("No matches found for filters: " +
+                                  "".join(f + ", " for f in filters)[:-2] +
+                                  ". Press Enter to go back")
                 self.show_default()
                 return(0)
+            print(filtered_repo.filenames())
 
         self.add_existing_repo(filtered_repo, instance)
         self.file_repo(instance).set_lineformat(['name', 'misc'])
@@ -427,3 +433,18 @@ class QnAppRF(qn.QnApp):
             sys.exit(0)
         else:
             self.show_default()
+
+    def show_warning(self, message):
+        if self.launcher == 'rofi':
+            proc = Popen(['rofi', '-e', message])
+            proc.communicate()
+        elif self.launcher == 'fzf':
+            prompt = 'qn warning:'
+            extra_args = self.options.gen_instance_args('default',
+                                                        alt_help=message,
+                                                        alt_prompt=prompt)
+            ANSWER = self.run_launcher([""], extra_args)
+            if not ANSWER:
+                return(0)
+            if not ANSWER[0]:
+                sys.exit(0)

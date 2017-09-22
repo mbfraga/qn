@@ -167,7 +167,7 @@ class FileRepo:
         """
         if not os.path.isfile(filepath):
             print(filepath + " is not a file.")
-            return
+            sys.exit(1)
 
         fp_rel = filepath[self.__path_len:]
 
@@ -216,6 +216,9 @@ class FileRepo:
             plist += list(itemgetter(prop)(filen) for filen in
                           self.__file_list)
         return(plist)
+
+    def is_empty(self):
+        return(not self.__filecount > 0)
 
     def filenames(self, pinned_first=True):
         """Get a list of filenames"""
@@ -268,11 +271,40 @@ class FileRepo:
         self.__pinned_filenames = filelist_topin
         return(1)
 
+    def search_files(self, queries_list):
+        """Search the contents of files and return matches."""
+        if not self.__file_list:
+            print("No files added to file repo")
+            return(1)
+        results_file_repo = FileRepo(self.__path)
+        for fp in self.filepaths():
+            match = ""
+            queries_p = list(queries_list)
+            notefile = open(fp, 'r')
+            try:
+                for line in notefile:
+                    if not queries_p:
+                        results_file_repo.add_file(fp, match)
+                        notefile.close()
+                        break
+                    for qp in list(queries_p):
+                        if qp.lower() in line.lower():
+                            match = line
+                            queries_p.remove(qp)
+            except:  # Not pretty, but for now it works.
+                continue
+        print(results_file_repo.filecount(), results_file_repo.is_empty())
+        if results_file_repo.is_empty():
+            return(None)
+        else:
+            return(results_file_repo)
+
     def grep_files(self, filters_string):
         """Search the contents of files and return matches. Uses grep."""
         if not self.__file_list:
             print("No files added to file repo")
             return(1)
+        grep_file_repo = FileRepo(self.__path)
 
         proc = Popen(['grep', '-i', '-I', filters_string] + self.filepaths(),
                      stdout=PIPE)
