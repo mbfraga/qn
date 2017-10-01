@@ -36,7 +36,7 @@ def file_mime_type_bash(filepath):
     # This is more reliable it seems.
 
     if not cmd_exists('xdg-mime'):
-        file_mime_type(filepath)
+        return(file_mime_type(filepath))
     proc = Popen(['xdg-mime', 'query', 'filetype', filepath],
                  stdout=PIPE)
     mtype = proc.stdout.read().decode('utf-8')
@@ -594,7 +594,7 @@ class QnApp ():
                     # os.system(self.options.terminal + " -e "
                     #           + self.options.editor + " " + fulldir)
             else:
-                os.system(self.options.launcher + " " + fulldir)
+                os.system(self.options.opener + " " + fulldir)
         else:
             print(fulldir + " is not a note")
             sys.exit(1)
