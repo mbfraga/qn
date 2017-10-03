@@ -7,6 +7,7 @@ from subprocess import PIPE, call
 
 # Globals
 # _TAGF_PATH = os.path.join(_QNDATA, 'tags.pickle')
+_XDG_CONFIG_HOME = os.environ.get('XDG_CONFIG_HOME')
 _DEFAULT_QNDIR = '~/qn/'
 _FALLBACK_TERMINAL = 'xterm'
 _FALLBACK_EDITOR = 'vi'
@@ -18,7 +19,11 @@ _HOTKEY_COMMANDS = ('forcenew', 'rename', 'delete', 'grep', 'showtrash',
                     'sortsize')
 
 _INTERACTIVE = {'rofi': False, 'fzf': True}
-_DEFAULT_CONFIG = '~/.config/qn/config'
+if _XDG_CONFIG_HOME is None:
+    _DEFAULT_CONFIG = '~/.config/qn/config'
+else:
+    _XDG_CONFIG_HOME = os.path.expanduser(_XDG_CONFIG_HOME)
+    _DEFAULT_CONFIG = os.path.join(_XDG_CONFIG_HOME, 'qn/config')
 _DEFAULT_COMMAND = {}
 _DEFAULT_COMMAND['rofi'] = ['rofi', '-sep', '\\0', '-columns', '1',
                             '-dmenu', '-i',
