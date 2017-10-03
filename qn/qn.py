@@ -3,18 +3,13 @@
 
 import qn.hotkey_manager as hotkey_manager
 
-import os
-import sys
+from os import system, path, makedirs, walk, stat, rename, rmdir
+from sys import exit
 from subprocess import Popen, PIPE, call
 from stat import ST_CTIME, ST_ATIME, ST_MTIME, ST_SIZE
 from operator import itemgetter
 import mimetypes
 from datetime import datetime
-import time
-timea = time.time()
-
-
-QNDIR = ''
 
 
 # Check if program exists - linux only
@@ -60,7 +55,7 @@ def terminal_open(terminal, command, title=None):
     else:
         generated_command = terminal + ' -T "' + title + '"'
 
-    os.system(generated_command + " -e " + command)
+    system(generated_command + " -e " + command)
 
 
 def sizeof_fmt(num, suffix='B'):
@@ -73,7 +68,7 @@ def sizeof_fmt(num, suffix='B'):
 
 class FileRepo:
     def __init__(self, dirpath=None):
-        self.__path = os.path.join(dirpath, "")
+        self.__path = path.join(dirpath, "")
         self.__path_len = len(self.__path)
         self.__file_list = []    # list of files - dicts
         self.__pfile_list = []  # list of pinned files - dicts
@@ -116,23 +111,23 @@ class FileRepo:
         else:
             temp_pinned_filenames = False
 
-        for root, dirs, files in os.walk(self.__path, topdown=True):
+        for root, dirs, files in walk(self.__path, topdown=True):
             for name in files:
-                fp = os.path.join(root, name)
+                fp = path.join(root, name)
                 fp_rel = fp[self.__path_len:]
 
                 if (fp_rel[0] == '.'):
                     continue
                 try:
-                    stat = os.stat(fp)
+                    filestat = stat(fp)
                 except:
                     continue
 
                 file_props = {}
-                file_props['size'] = stat[ST_SIZE]
-                file_props['adate'] = stat[ST_ATIME]
-                file_props['mdate'] = stat[ST_MTIME]
-                file_props['cdate'] = stat[ST_CTIME]
+                file_props['size'] = filestat[ST_SIZE]
+                file_props['adate'] = filestat[ST_ATIME]
+                file_props['mdate'] = filestat[ST_MTIME]
+                file_props['cdate'] = filestat[ST_CTIME]
                 file_props['name'] = fp_rel
                 file_props['fullpath'] = fp
                 file_props['misc'] = None
@@ -165,22 +160,22 @@ class FileRepo:
         filepath -- path to file
         misc_props -- string to add as a 'misc' property to file
         """
-        if not os.path.isfile(filepath):
+        if not path.isfile(filepath):
             print(filepath + " is not a file.")
-            sys.exit(1)
+            exit(1)
 
         fp_rel = filepath[self.__path_len:]
 
         try:
-            stat = os.stat(filepath)
+            filestat = stat(filepath)
         except:
             return
 
         file_props = {}
-        file_props['size'] = stat[ST_SIZE]
-        file_props['adate'] = stat[ST_ATIME]
-        file_props['mdate'] = stat[ST_MTIME]
-        file_props['cdate'] = stat[ST_CTIME]
+        file_props['size'] = filestat[ST_SIZE]
+        file_props['adate'] = filestat[ST_ATIME]
+        file_props['mdate'] = filestat[ST_MTIME]
+        file_props['cdate'] = filestat[ST_CTIME]
         file_props['name'] = fp_rel
         file_props['fullpath'] = filepath
         file_props['misc'] = misc_prop
@@ -396,7 +391,7 @@ class QnApp ():
             return(False)
             # print("Error: File repository '" + instance + "' does not exist."
             #         + " Please add it using add_repo().")
-            # sys.exit(1)
+            # exit(1)
 
     def list_notes(self, printby='filenames', instance='default',
                    lines_format_list=None, pinned_first=True):
@@ -413,7 +408,7 @@ class QnApp ():
         if not self.__file_repo:
             print("Please populate QnApp with a file repository.")
             print("This can be done via QnApp.add_repo()")
-            sys.exit(1)
+            exit(1)
         if printby == 'filenames':
             for filename in self.__file_repo[instance].filenames(pinned_first):
                 print(filename)
@@ -461,10 +456,10 @@ class QnApp ():
                     seln = int(selection)
                 except (ValueError):
                     print('Invalid selection "' + selection + '".')
-                    sys.exit(1)
+                    exit(1)
                 if seln not in range(found_num):
                     print('Invalid selection "' + selection + '".')
-                    sys.exit(1)
+                    exit(1)
                 else:
                     print("Opening " + found_list[seln] + "...")
                     self.open_note(found_list[seln])
@@ -504,7 +499,7 @@ class QnApp ():
         if ('/' in name1):
             has_sp1 = True
             sd1, sn1 = name1.rsplit('/', 1)
-            td1 = os.path.join(dest1, sd1)
+            td1 = path.join(dest1, sd1)
         else:
             sn1 = name1
             td1 = dest1
@@ -512,19 +507,19 @@ class QnApp ():
         if ('/' in name2):
             has_sp2 = True
             sd2, sn2 = name2.rsplit('/', 1)
-            td2 = os.path.join(dest2, sd2)
+            td2 = path.join(dest2, sd2)
         else:
             sn2 = name2
             td2 = dest2
 
-        full_dir1 = os.path.join(td1, sn1)
-        full_dir2 = os.path.join(td2, sn2)
+        full_dir1 = path.join(td1, sn1)
+        full_dir2 = path.join(td2, sn2)
         if (full_dir1 == full_dir2):
             print('Source and destination are the same. Doing nothing.')
-            sys.exit(0)
+            exit(0)
 
         # check if destination already exists
-        if os.path.exists(full_dir2):
+        if path.exists(full_dir2):
             print('Note with same name found, creating conflict.')
             appended = "-conflict-"
             appended += datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -532,12 +527,12 @@ class QnApp ():
             name2 += appended
 
         if has_sp2:
-            if not (os.path.isdir(td2)):
+            if not (path.isdir(td2)):
                 print('creating ' + td2)
-                os.makedirs(td2)
+                makedirs(td2)
         # move the file
         try:
-            os.rename(full_dir1, full_dir2)
+            rename(full_dir1, full_dir2)
             # if move_tags:
             #     tagsdict = load_tags()
             #     if name1 in tagsdict:
@@ -546,17 +541,17 @@ class QnApp ():
             #         save_tags(tagsdict)
             print('Moved ' + full_dir1 + ' to ' + full_dir2)
         except OSError:
-            sys.exit(1)
+            exit(1)
 
         if has_sp1:
             try:
-                os.rmdir(td1)
+                rmdir(td1)
                 print('deleted ' + td1)
             except OSError:
                 print('not deleted ' + td1)
-                sys.exit(0)
+                exit(0)
 
-        sys.exit(0)
+        exit(0)
 
     def delete_note(self, note):
         """Delete a note by moving it to the trash."""
@@ -572,32 +567,32 @@ class QnApp ():
         """Open a note."""
 
         inter = self.options.interactive
-        fulldir = os.path.join(self.qndir, note)
-        if os.path.isfile(fulldir):
+        fulldir = path.join(self.qndir, note)
+        if path.isfile(fulldir):
             # mime = file_mime_type(note).split("/")
             mime = file_mime_type_bash(fulldir).strip().split("/")
-            fulldir = os.path.join(self.qndir, note).strip()
+            fulldir = path.join(self.qndir, note).strip()
             editor_command = self.options.editor + " '" + fulldir + "'"
 
             if (mime[0] == 'text' or mime[0] == 'None'):
                 if inter:
-                    os.system(editor_command)
+                    system(editor_command)
                 else:
                     terminal_open(self.options.terminal, editor_command)
                     # os.system(self.options.terminal + " -e "
                     #          + self.options.editor + " " + fulldir)
             elif (mime[1] == 'x-empty'):
                 if inter:
-                    os.system(editor_command)
+                    system(editor_command)
                 else:
                     terminal_open(self.options.terminal, editor_command)
-                    # os.system(self.options.terminal + " -e "
+                    # system(self.options.terminal + " -e "
                     #           + self.options.editor + " " + fulldir)
             else:
-                os.system(self.options.opener + " " + fulldir)
+                system(self.options.opener + " " + fulldir)
         else:
             print(fulldir + " is not a note")
-            sys.exit(1)
+            exit(1)
 
     def new_note(self, note):
         """Create a new note"""
@@ -605,24 +600,24 @@ class QnApp ():
         inter = self.options.interactive
         if '/' in note:
             note_dir = note.rsplit('/', 1)[0]
-            if not os.path.isdir(note_dir):
-                os.makedirs(os.path.join(self.qndir, note_dir), exist_ok=True)
+            if not path.isdir(note_dir):
+                makedirs(path.join(self.qndir, note_dir), exist_ok=True)
         editor_command = self.options.editor + " '"
-        editor_command += os.path.join(self.qndir, note).strip()
+        editor_command += path.join(self.qndir, note).strip()
         editor_command += "'"
         if inter:
-            os.system(self.options.editor + " " +
-                      os.path.join(self.qndir, note))
+            system(self.options.editor + " " +
+                   path.join(self.qndir, note))
         else:
             terminal_open(self.options.terminal, editor_command, note)
-            # os.system(self.options.terminal + ' -e ' + self.options.editor
-            #           + " " + os.path.join(self.__qndir, note))
+            # system(self.options.terminal + ' -e ' + self.options.editor
+            #           + " " + path.join(self.__qndir, note))
         return(0)
 
     def force_new_note(self, note):
         """Force create a new note"""
-        filepath = os.path.join(self.qndir, note.strip())
-        if os.path.isfile(filepath):
+        filepath = path.join(self.qndir, note.strip())
+        if path.isfile(filepath):
             self.open_note(note)
 
         else:
@@ -669,7 +664,7 @@ class QnApp ():
 #
 #     if not os.path.isfile(os.path.join(QNDIR, notename)):
 #         print('Note does not exist. No tag added.')
-#         sys.exit(0)
+#         exit(0)
 #     tagsdict = create_tag(tagname)
 #     if notename in tagsdict:
 #         if tagname in tagsdict[notename]:
@@ -689,7 +684,7 @@ class QnApp ():
 #
 #     if not os.path.isfile(os.path.join(QNDIR, notename)):
 #         print('Note does not exist. No tag removed.')
-#         sys.exit(0)
+#         exit(0)
 #
 #     if not tagsdict:
 #         tagsdict = load_tags()
@@ -711,7 +706,7 @@ class QnApp ():
 #
 #     if not os.path.isfile(os.path.join(QNDIR, notename)):
 #         print('Note does not exist. Doing nothing.')
-#         sys.exit(0)
+#         exit(0)
 #     if not tagsdict:
 #         tagsdict = load_tags()
 #     tagsdict.pop(notename, None)
@@ -724,7 +719,7 @@ class QnApp ():
 #
 #     if not os.path.isfile(os.path.join(QNDIR, notename)):
 #         print('Note does not exist.')
-#         sys.exit(0)
+#         exit(0)
 #
 #     tagsdict = load_tags()
 #     if notename in tagsdict:
@@ -814,7 +809,7 @@ class QnApp ():
 #     if args.list_notes:
 #         for filen in filerepo.filenames():
 #             print(filen)
-#         sys.exit(0)
+#         exit(0)
 #     if args.search != -1:
 #         search_list = filerepo.filenames()
 #         for filen in filerepo.filenames():
@@ -824,4 +819,4 @@ class QnApp ():
 #             if all(bool_list):
 #                 print(filen)
 #
-#         sys.exit(0)
+#         exit(0)

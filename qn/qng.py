@@ -2,9 +2,9 @@
 
 import qn.qn as qn
 
-import os
-import sys
-import struct
+from os import path
+from sys import exit
+from struct import pack
 from subprocess import Popen, PIPE
 
 
@@ -28,7 +28,7 @@ class QnAppRF(qn.QnApp):
                      stdin=PIPE, stdout=PIPE)
         for e in entries:
             proc.stdin.write((e).encode('utf-8'))
-            proc.stdin.write(struct.pack('B', 0))
+            proc.stdin.write(pack('B', 0))
         proc.stdin.close()
         answer = proc.stdout.read().decode("utf-8")
         exit_code = proc.wait()
@@ -65,7 +65,7 @@ class QnAppRF(qn.QnApp):
 
         for e in applist:
             proc.stdin.write((e).encode('utf-8'))
-            proc.stdin.write(struct.pack('B', 0))
+            proc.stdin.write(pack('B', 0))
         proc.stdin.close()
         answer = proc.stdout.read().decode("utf-8")
         exit_code = proc.wait()
@@ -174,9 +174,9 @@ class QnAppRF(qn.QnApp):
                 self.new_note(FILTER)
                 return(0)
             else:
-                path = os.path.join(self.qndir, NOTE)
-                print('path', path)
-                if os.path.isfile(path):
+                notepath = path.join(self.qndir, NOTE)
+                print('path', notepath)
+                if path.isfile(notepath):
                     print("file found, editing...")
                     self.open_note(NOTE)
                     return(0)
@@ -194,11 +194,11 @@ class QnAppRF(qn.QnApp):
         elif OPTSEL == 'forcenew':
             if not FILTER:
                 if not NOTE:
-                    sys.exit(0)
+                    exit(0)
                 else:
                     self.open_note(NOTE)
             elif not FILTER.strip():
-                sys.exit(0)
+                exit(0)
             self.force_new_note(FILTER.strip())
         elif OPTSEL == 'grep':
             if not FILTER:
@@ -242,7 +242,7 @@ class QnAppRF(qn.QnApp):
         ANS, val = self.run_launcher(['no', 'yes'], extra_args)
 
         if not ANS:
-            sys.exit(0)
+            exit(0)
 
         if appname == 'rofi':
             return(ANS[1] == 'yes')
@@ -286,7 +286,7 @@ class QnAppRF(qn.QnApp):
         ANS, val = self.run_launcher([''], extra_args)
 
         if (ANS is None):
-            sys.exit(1)
+            exit(1)
 
         print(ANS)
 
@@ -296,7 +296,7 @@ class QnAppRF(qn.QnApp):
             self.move_note(note.strip(), ANS[0].strip())
         else:
             print("Doing Nothing.")
-            sys.exit(0)
+            exit(0)
 
     def show_trash(self):
 
@@ -390,8 +390,8 @@ class QnAppRF(qn.QnApp):
                 self.new_note(FILTER)
                 return(0)
             else:
-                path = os.path.join(self.qndir, NOTE)
-                if os.path.isfile(path):
+                notepath = path.join(self.qndir, NOTE)
+                if path.isfile(notepath):
                     print("file found, editing...")
                     self.open_note(NOTE)
                     return(0)
@@ -430,7 +430,7 @@ class QnAppRF(qn.QnApp):
         if not ANSWER:
             return(0)
         if not ANSWER[0]:
-            sys.exit(0)
+            exit(0)
         else:
             self.show_default()
 
@@ -447,4 +447,4 @@ class QnAppRF(qn.QnApp):
             if not ANSWER:
                 return(0)
             if not ANSWER[0]:
-                sys.exit(0)
+                exit(0)
