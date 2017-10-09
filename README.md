@@ -56,21 +56,20 @@ Note: qn is not in the python repos, so pip won't find it. We are using pip
 here because it affords us better ability to uninstall **qn** cleanly. easy_install
 also works.
 
-1. git clone https://github.com/mbfraga/qn
+1. Run `git clone https://github.com/mbfraga/qn`
 
-2. go to qn directory. `cd qn`
+2. Go to qn directory. `cd qn`
 
 3. Run `sudo pip3 install ./`
 
-4. copy /etc/qn/config.example to ~/.config/qn/config. `cp 
+4. Copy /etc/qn/config.example to ~/.config/qn/config.
+   `cp /etc/qn/config.example ~/.config/qn/config`
 
 ## Upgrade via pip
 
-1. git pull 
-
-2. go to **qn** directory
-
-2. Run `sudo pip3 install ./ --upgrade`
+1. Go to **qn** directory
+1. Run `git pull`
+3. Run `sudo pip3 install ./ --upgrade`
 
 ## Set up without pip
 
@@ -87,14 +86,14 @@ your **$PATH**
 3. Clone qn. `git clone https://github.com/mbfraga/qn`
 
 4. Create symlinks for the qnr and qnf executables.
-
    ```bash
-   ln -s ~/opt/qn/bin/qnr ~/
-   ln -s ~/opt/qn/bin/qnf ~/
+   ln -s ~/opt/qn/bin/qnr ~/bin/
+   ln -s ~/opt/qn/bin/qnf ~/bin/
    ```
+
 5. Create config directory. `mkdir ~/.config/qn`
 
-6. Copy the config file. `cp config.example ~/.config/qn/`
+6. Copy the config file. `cp config.example ~/.config/qn/config`
 
 ## Misc Notes
 
